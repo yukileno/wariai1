@@ -181,11 +181,11 @@ function drawCuboid(params) {
     const textDy = pFBR.y - dy/2 + 20;
     const textD = `<text x="${textDx}" y="${textDy}" transform="rotate(-35, ${textDx}, ${textDy})" font-family="Outfit, sans-serif" font-size="16" fill="#333" font-weight="bold" text-anchor="middle">${d}cm</text>`;
 
-    container.innerHTML = \`<svg width="100%" height="100%" viewBox="0 0 ${svgW} ${svgH}">
-        \${hidden1}\${hidden2}\${hidden3}
-        \${polyTop}\${polySide}\${polyFront}
-        \${textW}\${textH}\${textD}
-    </svg>\`;
+    container.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${svgW} ${svgH}">
+        ${hidden1}${hidden2}${hidden3}
+        ${polyTop}${polySide}${polyFront}
+        ${textW}${textH}${textD}
+    </svg>`;
 }
 
 function typeChar(char) {
