@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>体積の計算ドリル</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=M+PLUS+Rounded+1c:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div id="app" class="glass-container">
+        <!-- Start Screen -->
+        <div id="screen-start" class="screen active">
+            <h1 class="logo">Math<br><span>Dash!</span></h1>
+            <p class="description">60秒で何問とけるかな？<br>今日のお題: <span id="topic-name">小数の掛け算</span></p>
+            <input type="text" id="player-name" placeholder="なまえをいれてね" autocomplete="off" />
+            <button id="btn-start" class="primary-btn">スタート！</button>
+            <button id="btn-show-ranking" class="secondary-btn">ランキングをみる</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="screen-game" class="screen">
+            <div class="game-header">
+                <div class="timer">残り <span id="time-left">60</span>秒</div>
+                <div class="score-display">スコア: <span id="current-score">0</span></div>
+            </div>
+            
+            <div class="problem-board">
+                <div id="question-text" class="question" style="font-size: clamp(1.2rem, 3vw, 1.8rem); margin-bottom: 20px; white-space: normal;">次の直方体や立方体の体積を求めましょう。</div>
+                <div id="diagram-container" style="display: flex; justify-content: center; align-items: center; width: 100%; height: 250px; margin-bottom: 15px;"></div>
+                <div class="answer-box">
+                    <span id="user-input" class="user-input-text"></span>
+                    <span class="cursor"></span>
+                </div>
+            </div>
+
+            <!-- Numpad for touch/mouse -->
+            <div class="numpad">
+                <button class="num-key">7</button><button class="num-key">8</button><button class="num-key">9</button>
+                <button class="num-key">4</button><button class="num-key">5</button><button class="num-key">6</button>
+                <button class="num-key">1</button><button class="num-key">2</button><button class="num-key">3</button>
+                <button class="num-key">0</button><button class="num-key dot-key">.</button><button class="cmd-key btn-delete">消す</button>
+                <button class="cmd-key btn-enter" style="grid-column: span 3;">こたえる！</button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="screen-result" class="screen">
+            <h2>タイムアップ！</h2>
+            <div class="final-score">
+                <span class="score-label">あなたのスコア</span>
+                <span id="final-score-value" class="score-value">150</span>
+            </div>
+            <p id="saving-status" class="status-msg">ランキングに送信中...</p>
+            <button id="btn-retry" class="primary-btn">もういちど</button>
+            <button id="btn-result-ranking" class="secondary-btn">ランキングへ</button>
+        </div>
+
+        <!-- Ranking Screen -->
+        <div id="screen-ranking" class="screen">
+            <h2>🏆 T O P 3 0 🏆</h2>
+            <div id="ranking-list" class="ranking-board">
+                <div class="loading-spinner"></div>
+            </div>
+            <button id="btn-back-home" class="primary-btn">もどる</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="problem-generator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
