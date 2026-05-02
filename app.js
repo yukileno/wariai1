@@ -71,6 +71,8 @@ function init() {
             startGame();
         }
     });
+
+    initCanvas();
 }
 
 // --- Screen Management ---
@@ -99,6 +101,10 @@ function startGame() {
     
     nextProblem();
     switchScreen('game');
+    setTimeout(() => {
+        resizeCanvas();
+        clearCanvas();
+    }, 10);
 
     // Start Timer
     gameState.timerId = setInterval(() => {
@@ -116,85 +122,92 @@ function nextProblem() {
         dom.questionText.textContent = gameState.currentProblem.questionText;
     }
     
-    // Draw the generated cuboid or clear diagram
-    const container = document.getElementById('diagram-container');
-    if(gameState.currentProblem.params) {
-        drawCuboid(gameState.currentProblem.params);
-    } else if (container) {
-        container.innerHTML = ''; // clear previous diagram if any
-    }
+    // Clear drawing canvas for the new problem
+    clearCanvas();
 
     gameState.userInput = "";
     updateInputDisplay();
 }
 
-// --- SVG Cuboid Drawer ---
-function drawCuboid(params) {
-    const container = document.getElementById('diagram-container');
-    if (!container) return;
+// --- Canvas Drawing Logic ---
+let ctx = null;
 
-    const svgW = 400;
-    const svgH = 320;
+function initCanvas() {
+    const canvas = document.getElementById('calc-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
     
-    const { w, h, d } = params;
-    const maxVal = Math.max(w, h, d);
+    let isDrawing = false;
     
-    const scale = 150 / maxVal; 
-    const lenW = w * scale;
-    const lenH = h * scale;
-    const angle = 35 * (Math.PI / 180); // 35 degrees
-    const lenD = d * scale * 0.6; 
+    const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return { 
+            x: (clientX - rect.left) * scaleX, 
+            y: (clientY - rect.top) * scaleY 
+        };
+    };
 
-    const dx = lenD * Math.cos(angle);
-    const dy = lenD * Math.sin(angle);
+    const startDrawing = (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    };
 
-    const totalW = lenW + dx;
-    const totalH = lenH + dy;
+    const draw = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    };
 
-    const x0 = (svgW - totalW) / 2;
-    const y0 = svgH - ((svgH - totalH) / 2) - dy - 15;
+    const stopDrawing = () => {
+        if(isDrawing) {
+            ctx.beginPath();
+        }
+        isDrawing = false;
+    };
 
-    const pFBL = { x: x0, y: y0 };
-    const pFBR = { x: x0 + lenW, y: y0 };
-    const pFTL = { x: x0, y: y0 - lenH };
-    const pFTR = { x: x0 + lenW, y: y0 - lenH };
-    const pBBL = { x: x0 + dx, y: y0 - dy };
-    const pBBR = { x: x0 + lenW + dx, y: y0 - dy };
-    const pBTL = { x: x0 + dx, y: y0 - lenH - dy };
-    const pBTR = { x: x0 + lenW + dx, y: y0 - lenH - dy };
-
-    const colors = [
-        { front: '#ffb3c6', top: '#ffc8dd', side: '#ffafcc', stroke: '#c9184a' },
-        { front: '#a0c4ff', top: '#bde0fe', side: '#9bb1ff', stroke: '#023e8a' },
-        { front: '#caffbf', top: '#fdffb6', side: '#b5e48c', stroke: '#386641' },
-        { front: '#ffd6a5', top: '#ffe6a7', side: '#ffadad', stroke: '#9d0208' }
-    ];
-    const col = colors[Math.floor(Math.random() * colors.length)];
-
-    const polyTop = `<polygon points="${pFTL.x},${pFTL.y} ${pFTR.x},${pFTR.y} ${pBTR.x},${pBTR.y} ${pBTL.x},${pBTL.y}" fill="${col.top}" stroke="${col.stroke}" stroke-linejoin="round" stroke-width="2"/>`;
-    const polySide = `<polygon points="${pFTR.x},${pFTR.y} ${pBTR.x},${pBTR.y} ${pBBR.x},${pBBR.y} ${pFBR.x},${pFBR.y}" fill="${col.side}" stroke="${col.stroke}" stroke-linejoin="round" stroke-width="2"/>`;
-    const polyFront = `<polygon points="${pFBL.x},${pFBL.y} ${pFBR.x},${pFBR.y} ${pFTR.x},${pFTR.y} ${pFTL.x},${pFTL.y}" fill="${col.front}" stroke="${col.stroke}" stroke-linejoin="round" stroke-width="2"/>`;
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
     
-    const hidden1 = `<line x1="${pFBL.x}" y1="${pFBL.y}" x2="${pBBL.x}" y2="${pBBL.y}" stroke="${col.stroke}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>`;
-    const hidden2 = `<line x1="${pBBL.x}" y1="${pBBL.y}" x2="${pBBR.x}" y2="${pBBR.y}" stroke="${col.stroke}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>`;
-    const hidden3 = `<line x1="${pBBL.x}" y1="${pBBL.y}" x2="${pBTL.x}" y2="${pBTL.y}" stroke="${col.stroke}" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>`;
+    canvas.addEventListener('touchstart', startDrawing, {passive: false});
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    window.addEventListener('touchend', stopDrawing);
+    window.addEventListener('touchcancel', stopDrawing);
 
-    const svgTextFilter = `<filter id="shadow"><feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="rgba(0,0,0,0.8)"/></filter>`;
-    const textStyle = `font-family="Outfit, sans-serif" font-size="22" fill="#ffffff" font-weight="900" filter="url(#shadow)"`;
+    document.getElementById('btn-clear-canvas').addEventListener('click', clearCanvas);
+    window.addEventListener('resize', resizeCanvas);
+}
 
-    const textW = `<text x="${x0 + lenW/2}" y="${y0 + 26}" ${textStyle} text-anchor="middle">${w}cm</text>`;
-    const textH = `<text x="${pFBR.x + 8}" y="${y0 - lenH/2 + 6}" ${textStyle} alignment-baseline="middle">${h}cm</text>`;
-    
-    const textDx = pFBR.x + dx/2 + 8;
-    const textDy = pFBR.y - dy/2 + 24;
-    const textD = `<text x="${textDx}" y="${textDy}" transform="rotate(-35, ${textDx}, ${textDy})" ${textStyle} text-anchor="middle">${d}cm</text>`;
+function resizeCanvas() {
+    const canvas = document.getElementById('calc-canvas');
+    if(!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        if(ctx) {
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#0f172a'; // match text color
+        }
+    }
+}
 
-    container.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${svgW} ${svgH}">
-        <defs>${svgTextFilter}</defs>
-        ${hidden1}${hidden2}${hidden3}
-        ${polyTop}${polySide}${polyFront}
-        ${textW}${textH}${textD}
-    </svg>`;
+function clearCanvas() {
+    const canvas = document.getElementById('calc-canvas');
+    if(!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function typeChar(char) {
