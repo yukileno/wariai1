@@ -237,11 +237,12 @@ button:active { transform: scale(0.95); }
     overflow: hidden;
     border: 2px solid var(--glass-border);
     background-color: rgba(255, 255, 255, 0.95);
-    /* Grid background */
     background-image: 
-        linear-gradient(rgba(0, 150, 255, 0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 150, 255, 0.2) 1px, transparent 1px);
-    background-size: 25px 25px;
+        linear-gradient(rgba(0, 150, 255, 0.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 150, 255, 0.35) 1px, transparent 1px),
+        linear-gradient(rgba(0, 150, 255, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 150, 255, 0.15) 1px, transparent 1px);
+    background-size: 25px 25px, 25px 25px, 12.5px 12.5px, 12.5px 12.5px;
     background-position: center top;
 }
 
