@@ -27,31 +27,34 @@
 
         <!-- Game Screen -->
         <div id="screen-game" class="screen">
-            <div class="game-header-top">
-                <button id="btn-save-quit" class="quit-btn">記録してやめる</button>
-            </div>
             <div class="game-header">
-                <div class="hud-item lives-hud">
-                    <span class="hud-icon">❤️</span>
-                    <span class="hud-text">LIVES:</span>
-                    <span id="lives-left" class="hud-value">3</span>
-                </div>
-                <div class="hud-item score-hud">
-                    <span class="hud-icon">🪙</span>
-                    <span class="hud-text">SCORE:</span>
-                    <span id="current-score" class="hud-value">0</span>
+                <button id="btn-save-quit" class="quit-btn">記録してやめる</button>
+                <div class="hud-group">
+                    <div class="hud-item lives-hud">
+                        <span class="hud-icon">❤️</span>
+                        <span class="hud-text">LIVES:</span>
+                        <span id="lives-left" class="hud-value">3</span>
+                    </div>
+                    <div class="hud-item score-hud">
+                        <span class="hud-icon">🪙</span>
+                        <span class="hud-text">SCORE:</span>
+                        <span id="current-score" class="hud-value">0</span>
+                    </div>
                 </div>
             </div>
             
             <div class="problem-board">
-                <div id="question-text" class="question">計算しましょう。</div>
+                <div class="question-container">
+                    <div id="question-text" class="question">計算しましょう。</div>
+                    <div class="equals-sign">＝</div>
+                    <div class="answer-box">
+                        <span id="user-input" class="user-input-text"></span>
+                        <span class="cursor"></span>
+                    </div>
+                </div>
                 <div id="calc-area">
                     <canvas id="calc-canvas"></canvas>
                     <button id="btn-clear-canvas" class="btn-clear-canvas">消す</button>
-                </div>
-                <div class="answer-box">
-                    <span id="user-input" class="user-input-text"></span>
-                    <span class="cursor"></span>
                 </div>
             </div>
 
