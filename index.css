@@ -1,16 +1,16 @@
 :root {
-    --bg-primary: #87CEEB; /* Sky blue */
-    --panel-bg: rgba(255, 255, 255, 0.9);
-    --panel-border: #1e293b;
-    --primary: #3b82f6; 
-    --primary-shadow: #1d4ed8;
-    --accent: #facc15; 
-    --accent-shadow: #ca8a04;
-    --correct: #22c55e;
-    --correct-shadow: #166534;
-    --wrong: #ef4444;
-    --wrong-shadow: #991b1b;
-    --text-main: #0f172a;
+    --bg-primary: #573d26; /* Fallback brown */
+    --panel-bg: #c6c6c6; /* Minecraft inventory gray */
+    --panel-border: #555555;
+    --primary: #5b8731; /* Grass green */
+    --primary-shadow: #2a4d13;
+    --accent: #ffaa00; /* Gold */
+    --accent-shadow: #c78000;
+    --correct: #77de14; /* XP green */
+    --correct-shadow: #4c9c05;
+    --wrong: #ff2222; /* Redstone red */
+    --wrong-shadow: #9c0c0c;
+    --text-main: #3f3f3f; /* Minecraft chat dark */
     --text-light: #ffffff;
     --font-stroke: #1e293b;
 }
@@ -22,15 +22,15 @@
 }
 
 body {
-    font-family: 'M PLUS Rounded 1c', 'Outfit', sans-serif;
+    font-family: 'DotGothic16', monospace;
     background-color: var(--bg-primary);
-    background-image: url('css/bg.webp');
+    background-image: url('css/minecraft_bg.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    /* Overlay to ensure UI is readable against the bright background */
-    box-shadow: inset 0 0 0 2000px rgba(255, 255, 255, 0.1);
-    color: var(--text-main);
+    /* Dark overlay for Minecraft night/dusk vibe */
+    box-shadow: inset 0 0 0 2000px rgba(0, 0, 0, 0.15);
+    color: var(--text-light);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -38,26 +38,30 @@ body {
     overflow: hidden;
     position: relative;
     user-select: none;
+    image-rendering: pixelated;
 }
 
-/* Glass Container -> Solid Cartoon Panel */
+/* Minecraft Inventory GUI Style */
 .glass-container {
     width: 100%;
     max-width: 480px;
     height: 100vh;
     background: var(--panel-bg);
-    border: 6px solid var(--panel-border);
-    border-radius: 24px;
-    padding: 30px;
+    border: 4px solid var(--panel-border);
+    border-radius: 0; /* No round corners in Minecraft */
+    padding: 25px;
     position: relative;
-    box-shadow: 0 12px 0 var(--panel-border), 0 25px 40px rgba(0, 0, 0, 0.4);
+    /* 3D inset border simulation of Minecraft chest/inventory screen */
+    box-shadow: 
+        inset 4px 4px 0px #ffffff, 
+        inset -4px -4px 0px #555555,
+        0 12px 25px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
 }
 
 @media (max-width: 480px) {
     .glass-container {
-        border-radius: 0;
         border: none;
         max-height: 100vh;
         padding: 20px 15px;
@@ -72,92 +76,132 @@ body {
     justify-content: center;
     height: 100%;
     width: 100%;
-    animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    /* Minecraft-like snappy transition (no smooth bounce) */
+    animation: pixelAppear 0.15s steps(3) forwards;
 }
 
 .screen.active {
     display: flex;
 }
 
-@keyframes bounceIn {
-    0% { opacity: 0; transform: scale(0.9); }
+@keyframes pixelAppear {
+    0% { opacity: 0; transform: scale(0.95); }
     100% { opacity: 1; transform: scale(1); }
 }
 
 /* Start Screen */
 .logo {
-    font-size: 4rem;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 900;
+    font-size: 3.2rem;
+    font-family: 'DotGothic16', monospace;
+    font-weight: bold;
     text-align: center;
-    line-height: 1.1;
-    margin-bottom: 20px;
-    color: #38bdf8;
-    -webkit-text-stroke: 3px var(--font-stroke);
-    text-shadow: 4px 4px 0 var(--font-stroke);
-    letter-spacing: 2px;
+    line-height: 1.2;
+    margin-bottom: 25px;
+    color: #c6c6c6;
+    -webkit-text-stroke: 2px #3f3f3f;
+    /* Minecraft Title Style Double Shadow */
+    text-shadow: 4px 4px 0px #3f3f3f, 6px 6px 0px #1f1f1f;
+    letter-spacing: 1px;
 }
-.logo span { color: var(--accent); }
+.logo span { 
+    color: var(--accent); 
+    text-shadow: 4px 4px 0px #553d00, 6px 6px 0px #1f1f1f;
+}
 
 .description {
     font-size: 1.3rem;
     text-align: center;
-    margin-bottom: 30px;
-    font-weight: 700;
+    margin-bottom: 25px;
+    font-weight: normal;
     color: var(--text-main);
+    text-shadow: 1px 1px 0px #ffffff;
+}
+.description span {
+    color: #00aa00; /* Dark green for focus */
+    font-weight: bold;
 }
 
 #player-name {
     width: 80%;
-    padding: 15px;
-    border-radius: 16px;
-    border: 4px solid var(--panel-border);
-    background: #ffffff;
-    color: var(--text-main);
+    padding: 12px;
+    border-radius: 0;
+    border: 4px solid #3f3f3f;
+    background: #000000; /* Minecraft chat/input dark background */
+    color: #ffffff;
     font-size: 1.4rem;
-    font-weight: 700;
     text-align: center;
     margin-bottom: 30px;
     font-family: inherit;
     outline: none;
-    box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: inset 4px 4px 0px #1f1f1f;
 }
 #player-name:focus {
-    border-color: var(--primary);
+    border-color: #ffffff; /* Minecraft text focus border white */
 }
 
+/* Minecraft UI Buttons */
 button {
     width: 80%;
-    padding: 15px;
-    border-radius: 16px;
-    font-size: 1.4rem;
-    font-weight: 900;
+    padding: 12px;
+    border-radius: 0;
+    font-size: 1.3rem;
     font-family: inherit;
     cursor: pointer;
-    border: 4px solid var(--panel-border);
+    border: 4px solid;
+    /* 3D light-gray border */
+    border-color: #ffffff #555555 #555555 #ffffff;
+    background: #8f8f8f;
+    color: #e0e0e0;
+    text-shadow: 2px 2px 0px #3f3f3f;
     margin-bottom: 15px;
-    transition: transform 0.1s, box-shadow 0.1s;
-    text-transform: uppercase;
+    box-shadow: 0 4px 0px rgba(0, 0, 0, 0.4);
+    image-rendering: pixelated;
+    transition: none;
+}
+
+button:hover {
+    background: #a1a1a1;
+    color: #ffff55; /* Yellow text on hover in Minecraft */
+    border-color: #ffffff #555555 #555555 #ffffff;
+}
+
+button:active {
+    border-color: #555555 #ffffff #ffffff #555555; /* Invert border for pressed look */
+    background: #7a7a7a;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px rgba(0, 0, 0, 0.4);
 }
 
 .primary-btn {
-    background: var(--accent);
-    color: var(--text-main);
-    box-shadow: 0 6px 0 var(--accent-shadow), 0 6px 0 4px var(--panel-border);
+    /* Grass block green button */
+    background: #5b8731;
+    border-color: #7eb343 #2a4d13 #2a4d13 #7eb343;
+    color: #ffffff;
+    text-shadow: 2px 2px 0px #1a300c;
+}
+.primary-btn:hover {
+    background: #6a9c39;
+    color: #ffff55;
 }
 .primary-btn:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 var(--accent-shadow), 0 0 0 4px var(--panel-border);
+    border-color: #2a4d13 #7eb343 #7eb343 #2a4d13;
+    background: #4e732b;
 }
 
 .secondary-btn {
-    background: #e2e8f0;
-    color: var(--text-main);
-    box-shadow: 0 6px 0 #94a3b8, 0 6px 0 4px var(--panel-border);
+    /* Cobblestone gray button */
+    background: #737373;
+    border-color: #9e9e9e #3c3c3c #3c3c3c #9e9e9e;
+    color: #ffffff;
+    text-shadow: 2px 2px 0px #1f1f1f;
+}
+.secondary-btn:hover {
+    background: #828282;
+    color: #ffff55;
 }
 .secondary-btn:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 #94a3b8, 0 0 0 4px var(--panel-border);
+    border-color: #3c3c3c #9e9e9e #9e9e9e #3c3c3c;
+    background: #616161;
 }
 
 /* Game Screen */
@@ -167,53 +211,63 @@ button {
     align-items: center;
     width: 100%;
     margin-bottom: 10px;
+    gap: 10px;
 }
 .hud-group {
     display: flex;
     gap: 10px;
 }
+
 .quit-btn {
     width: auto;
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 1rem;
-    font-weight: 800;
     margin-bottom: 0;
-    background: #ef4444;
+    background: #b63333; /* Redstone red */
+    border-color: #db4d4d #6b1b1b #6b1b1b #db4d4d;
     color: white;
-    border: 3px solid var(--panel-border);
-    border-radius: 12px;
-    box-shadow: 0 4px 0 #991b1b, 0 4px 0 3px var(--panel-border);
+    text-shadow: 2px 2px 0px #3d0d0d;
+    box-shadow: 0 4px 0px rgba(0,0,0,0.4);
     cursor: pointer;
 }
+.quit-btn:hover {
+    background: #cb3d3d;
+    color: #ffff55;
+}
 .quit-btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 0 0 #991b1b, 0 0 0 3px var(--panel-border);
+    border-color: #6b1b1b #db4d4d #db4d4d #6b1b1b;
+    background: #9d2b2b;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px rgba(0,0,0,0.4);
 }
 
-.game-header {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-bottom: 20px;
-    gap: 10px;
-}
+/* Minecraft HUD items */
 .hud-item {
-    background: var(--primary);
-    border: 4px solid var(--panel-border);
-    border-radius: 30px;
-    padding: 5px 15px;
+    background: #8f8f8f;
+    border: 3px solid;
+    border-color: #ffffff #555555 #555555 #ffffff;
+    border-radius: 0;
+    padding: 4px 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: var(--text-light);
-    font-weight: 900;
-    box-shadow: 0 4px 0 var(--primary-shadow), 0 4px 0 4px var(--panel-border);
+    gap: 6px;
+    color: #ffffff;
+    text-shadow: 1px 1px 0px #3f3f3f;
+    box-shadow: 0 4px 0px rgba(0,0,0,0.3);
 }
-.lives-hud { background: #f43f5e; color: white; box-shadow: 0 4px 0 #be123c, 0 4px 0 4px var(--panel-border); }
-.score-hud { background: var(--accent); color: var(--text-main); box-shadow: 0 4px 0 var(--accent-shadow), 0 4px 0 4px var(--panel-border); }
-.hud-icon { font-size: 1.5rem; }
-.hud-text { font-family: 'Outfit', sans-serif; font-size: 1rem; }
-.hud-value { font-size: 1.5rem; }
+/* Life HUD -> Redstone Red Tint */
+.lives-hud { 
+    background: #9d2b2b; 
+    border-color: #db4d4d #4a0d0d #4a0d0d #db4d4d;
+}
+/* Score HUD -> Gold/Emerald Emerald Tint */
+.score-hud { 
+    background: #187a3a; 
+    border-color: #3cd47a #083b18 #083b18 #3cd47a;
+}
+.hud-icon { font-size: 1.2rem; }
+.hud-text { font-size: 0.9rem; font-family: inherit; }
+.hud-value { font-size: 1.2rem; font-weight: bold; }
 
 .problem-board {
     display: flex;
@@ -233,33 +287,39 @@ button {
 }
 
 .question {
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
-    font-weight: 900;
+    font-size: clamp(1.4rem, 4vw, 2rem);
     color: var(--text-main);
+    text-shadow: 1px 1px 0px #ffffff;
+    font-weight: bold;
 }
 
 .equals-sign {
-    font-size: clamp(1.4rem, 4vw, 2.2rem);
-    font-weight: 900;
+    font-size: clamp(1.4rem, 4vw, 2rem);
     color: var(--text-main);
+    text-shadow: 1px 1px 0px #ffffff;
+    font-weight: bold;
 }
 
+/* Minecraft Oak Sign Board (Wood Board) */
 #calc-area {
     position: relative;
     width: 100%;
     flex-grow: 1;
     min-height: 250px;
-    margin-bottom: 20px;
-    border-radius: 12px;
+    margin-bottom: 15px;
+    border-radius: 0;
     overflow: hidden;
-    border: 4px solid var(--panel-border);
-    background-color: #ffffff;
+    /* Oak sign dark border */
+    border: 6px solid #3d2c18;
+    /* Oak wood planks texture pattern */
+    background-color: #c49753;
     background-image: 
-        linear-gradient(rgba(0, 150, 255, 0.35) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 150, 255, 0.35) 1px, transparent 1px);
-    background-size: 50px 50px;
-    background-position: center top;
-    box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+        repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(92, 69, 35, 0.12) 28px, rgba(92, 69, 35, 0.12) 30px),
+        repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(92, 69, 35, 0.12) 28px, rgba(92, 69, 35, 0.12) 30px);
+    box-shadow: 
+        inset 4px 4px 0px #e2b373, 
+        inset -4px -4px 0px #8c6a38,
+        inset 0 0 20px rgba(0,0,0,0.1);
 }
 
 #calc-canvas {
@@ -272,160 +332,178 @@ button {
 
 .btn-clear-canvas {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
+    bottom: 8px;
+    right: 8px;
     width: auto;
     margin: 0;
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 0.9rem;
-    font-weight: 700;
-    background: #ef4444;
-    color: white;
-    border: 3px solid var(--panel-border);
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 0 #991b1b, 0 4px 0 3px var(--panel-border);
     z-index: 10;
 }
-.btn-clear-canvas:active {
-    transform: translateY(4px);
-    box-shadow: 0 0 0 #991b1b, 0 0 0 3px var(--panel-border);
-}
 
+/* Chat-style dark transparent answer box */
 .answer-box {
-    background: white;
-    border: 4px solid var(--panel-border);
-    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 4px solid #3d2c18; /* Wood frame */
+    border-radius: 0;
     min-width: 120px;
     height: 50px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: clamp(1.5rem, 4vw, 2rem);
-    font-weight: 900;
+    font-size: clamp(1.4rem, 4vw, 1.8rem);
     position: relative;
-    box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+    color: #ffffff;
+    text-shadow: 2px 2px 0px #1f1f1f;
+    box-shadow: inset 4px 4px 0px #000000;
 }
 .answer-box.correct {
-    background: var(--correct);
-    color: white;
-    animation: punch 0.3s ease-out;
+    background: #5b8731;
+    border-color: #7eb343;
+    animation: mcPunch 0.2s ease-out;
 }
 .answer-box.wrong {
-    background: var(--wrong);
-    color: white;
-    animation: shake 0.3s ease-in-out;
+    background: #b63333;
+    border-color: #db4d4d;
+    animation: mcShake 0.2s ease-in-out;
 }
 
 .cursor {
     display: inline-block;
-    width: 4px;
-    height: 40px;
-    background: var(--primary);
-    margin-left: 5px;
+    width: 3px;
+    height: 24px;
+    background: #ffffff;
+    margin-left: 4px;
     animation: blink 1s infinite;
 }
+
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-@keyframes punch { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes mcShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+@keyframes mcPunch { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
 /* Numpad */
 .numpad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 .numpad button {
     width: 100%;
     margin: 0;
-    padding: 10px 0;
-    border-radius: 16px;
-    background: #e2e8f0;
-    color: var(--text-main);
-    font-size: 1.8rem;
-    font-weight: 900;
-    border: 4px solid var(--panel-border);
-    box-shadow: 0 6px 0 #94a3b8, 0 6px 0 4px var(--panel-border);
-}
-.numpad button:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 #94a3b8, 0 0 0 4px var(--panel-border);
+    padding: 8px 0;
+    border-radius: 0;
+    font-size: 1.6rem;
 }
 .numpad .cmd-key {
-    font-size: 1.2rem;
-    background: #cbd5e1;
+    font-size: 1.1rem;
+    background: #737373;
+    border-color: #9e9e9e #3c3c3c #3c3c3c #9e9e9e;
+    color: #ffffff;
+    text-shadow: 2px 2px 0px #1f1f1f;
 }
+.numpad .cmd-key:hover {
+    background: #828282;
+}
+.numpad .cmd-key:active {
+    border-color: #3c3c3c #9e9e9e #9e9e9e #3c3c3c;
+    background: #616161;
+}
+
 .numpad .btn-enter {
-    background: var(--primary);
+    background: #5b8731;
+    border-color: #7eb343 #2a4d13 #2a4d13 #7eb343;
     color: white;
-    box-shadow: 0 6px 0 var(--primary-shadow), 0 6px 0 4px var(--panel-border);
+    text-shadow: 2px 2px 0px #1a300c;
+}
+.numpad .btn-enter:hover {
+    background: #6a9c39;
 }
 .numpad .btn-enter:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 var(--primary-shadow), 0 0 0 4px var(--panel-border);
+    border-color: #2a4d13 #7eb343 #7eb343 #2a4d13;
+    background: #4e732b;
 }
 
 /* Screen Ranking & Results */
 h2 {
-    font-size: 2.8rem;
-    font-weight: 900;
+    font-size: 2.4rem;
     margin-bottom: 20px;
-    color: #facc15;
-    -webkit-text-stroke: 2px var(--font-stroke);
-    text-shadow: 3px 3px 0 var(--font-stroke);
+    color: #ffaa00;
+    -webkit-text-stroke: 1.5px #3d2c18;
+    text-shadow: 3px 3px 0 #3d2c18;
+    text-align: center;
 }
+
 .final-score {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: #ffffff;
-    border: 4px solid var(--panel-border);
-    padding: 20px 40px;
-    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 4px solid #3f3f3f;
+    padding: 15px 30px;
+    border-radius: 0;
     margin-bottom: 20px;
-    box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: inset 4px 4px 0 #000000;
 }
-.score-label { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
-.score-value { font-size: 4rem; font-weight: 900; color: var(--correct); -webkit-text-stroke: 2px var(--panel-border); text-shadow: 3px 3px 0 var(--panel-border); }
-.status-msg { margin-bottom: 20px; font-weight: 700; color: var(--primary); }
+.score-label { font-size: 1.1rem; color: #ffffff; text-shadow: 1px 1px 0px #1f1f1f; }
+.score-value { 
+    font-size: 3.5rem; 
+    color: #77de14; /* XP Green */
+    -webkit-text-stroke: 1.5px #000000; 
+    text-shadow: 3px 3px 0 #000000; 
+}
+.status-msg { margin-bottom: 20px; color: #ffff55; text-shadow: 1px 1px 0 #000000; }
 
 .ranking-board {
     width: 100%;
     flex-grow: 1;
     overflow-y: auto;
-    background: #ffffff;
-    border: 4px solid var(--panel-border);
-    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 4px solid #3f3f3f;
+    border-radius: 0;
     padding: 15px;
     margin-bottom: 20px;
-    box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: inset 4px 4px 0 #000000;
 }
+/* Scrollbar Style for Minecraft (retro blocky look) */
+.ranking-board::-webkit-scrollbar {
+    width: 12px;
+}
+.ranking-board::-webkit-scrollbar-track {
+    background: #3c3c3c;
+    border: 2px solid #1a1a1a;
+}
+.ranking-board::-webkit-scrollbar-thumb {
+    background: #8b8b8b;
+    border: 2px solid;
+    border-color: #ffffff #555555 #555555 #ffffff;
+}
+
 .ranking-item {
     display: flex;
     justify-content: space-between;
-    padding: 10px 15px;
-    border-bottom: 3px dashed #cbd5e1;
-    font-size: 1.4rem;
-    font-weight: 800;
+    padding: 8px 12px;
+    border-bottom: 3px dashed #3f3f3f;
+    font-size: 1.2rem;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #1f1f1f;
 }
 .ranking-item:last-child { border-bottom: none; }
-.rank-1 { color: #facc15; -webkit-text-stroke: 1px var(--font-stroke); text-shadow: 2px 2px 0 var(--font-stroke); }
-.rank-2 { color: #94a3b8; -webkit-text-stroke: 1px var(--font-stroke); text-shadow: 2px 2px 0 var(--font-stroke); }
-.rank-3 { color: #b45309; -webkit-text-stroke: 1px var(--font-stroke); text-shadow: 2px 2px 0 var(--font-stroke); }
+.rank-1 { color: #ffaa00; text-shadow: 1px 1px 0 #3a2700; } /* Gold */
+.rank-2 { color: #c0c0c0; text-shadow: 1px 1px 0 #3a3a3a; } /* Iron/Silver */
+.rank-3 { color: #c47d2b; text-shadow: 1px 1px 0 #3a2100; } /* Copper/Bronze */
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 6px solid #cbd5e1;
-    border-top: 6px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    width: 32px;
+    height: 32px;
+    border: 4px solid #3c3c3c;
+    border-top: 4px solid #ffff55;
+    border-radius: 0; /* Square loader for minecraft */
+    animation: mcSpin 0.8s steps(4) linear infinite;
     margin: 40px auto;
 }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+@keyframes mcSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Landscape Tablet & PC layout (e.g. Chromebooks) */
 @media (min-width: 768px) and (orientation: landscape) {
@@ -452,12 +530,9 @@ h2 {
     .game-header { grid-column: 1 / -1; align-self: start; margin-bottom: 0; }
     .problem-board { grid-column: 1 / 2; grid-row: 2 / 3; width: 100%; height: 100%; min-height: 0; justify-content: space-between; }
     .numpad { grid-column: 2 / 3; grid-row: 2 / 3; margin-top: 0; gap: 1.5vh; height: 100%; grid-template-rows: repeat(5, 1fr); }
-    .numpad button { padding: 0; height: 100%; display: flex; justify-content: center; align-items: center; font-size: clamp(1.5rem, 3.5vh, 2.2rem); }
-    .question { font-size: clamp(1.8rem, 3.5vw, 2.5rem); }
-    .equals-sign { font-size: clamp(1.8rem, 3.5vw, 2.5rem); }
+    .numpad button { padding: 0; height: 100%; display: flex; justify-content: center; align-items: center; font-size: clamp(1.3rem, 3.5vh, 2rem); }
+    .question { font-size: clamp(1.6rem, 3.5vw, 2.2rem); }
+    .equals-sign { font-size: clamp(1.6rem, 3.5vw, 2.2rem); }
     #calc-area { margin-bottom: 1vh; }
-    .answer-box { font-size: clamp(1.8rem, 3.5vw, 2.5rem); height: clamp(40px, 6vh, 60px); min-width: 120px; flex-shrink: 0; }
-}
-
-@media (max-width: 1000px) {
+    .answer-box { font-size: clamp(1.6rem, 3.5vw, 2.2rem); height: clamp(40px, 6vh, 60px); min-width: 120px; flex-shrink: 0; }
 }
