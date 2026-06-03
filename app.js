@@ -43,7 +43,8 @@ const dom = {
     
     finalScoreValue: document.getElementById('final-score-value'),
     savingStatus: document.getElementById('saving-status'),
-    rankingList: document.getElementById('ranking-list')
+    rankingList: document.getElementById('ranking-list'),
+    btnResume: document.getElementById('btn-resume')
 };
 
 // --- Initialization ---
@@ -93,10 +94,19 @@ function init() {
     
     // Attach Handlers
     document.getElementById('btn-start').addEventListener('click', startGame);
+    if (dom.btnResume) {
+        dom.btnResume.addEventListener('click', resumeGame);
+    }
     document.getElementById('btn-show-ranking').addEventListener('click', showRanking);
-    document.getElementById('btn-retry').addEventListener('click', () => switchScreen('start'));
+    document.getElementById('btn-retry').addEventListener('click', () => {
+        checkResumeData();
+        switchScreen('start');
+    });
     document.getElementById('btn-result-ranking').addEventListener('click', showRanking);
-    document.getElementById('btn-back-home').addEventListener('click', () => switchScreen('start'));
+    document.getElementById('btn-back-home').addEventListener('click', () => {
+        checkResumeData();
+        switchScreen('start');
+    });
     document.getElementById('btn-save-quit').addEventListener('click', endGame);
 
     // Numpad Handlers
@@ -137,6 +147,7 @@ function init() {
     });
 
     initCanvas();
+    checkResumeData();
 }
 
 // --- Screen Management ---
@@ -149,6 +160,9 @@ function switchScreen(screenName) {
 function startGame() {
     const name = dom.playerNameInput.value.trim() || 'ななし';
     localStorage.setItem('math_player_name', name);
+    
+    // 新規スタート時はセーブデータを消去
+    localStorage.removeItem('shousuuwarizan_resume_save');
     
     gameState = {
         playerName: name,
@@ -179,6 +193,7 @@ function updateLivesDisplay() {
 }
 
 function nextProblem() {
+    saveGameProgress();
     gameState.currentProblem = window.ProblemGenerator.generate();
     if(dom.questionText && gameState.currentProblem.questionText) {
         dom.questionText.textContent = gameState.currentProblem.questionText;
@@ -428,6 +443,10 @@ function submitAnswer() {
 }
 
 function endGame() {
+    localStorage.removeItem('shousuuwarizan_resume_save');
+    if (dom.btnResume) {
+        dom.btnResume.style.display = 'none';
+    }
     dom.finalScoreValue.textContent = gameState.score;
     switchScreen('result');
     submitScoreToGAS();
@@ -514,3 +533,103 @@ async function showRanking() {
 
 // Start
 window.addEventListener('DOMContentLoaded', init);
+
+// --- Save/Resume Logic ---
+function saveGameProgress() {
+    if (gameState && gameState.lives > 0) {
+        const saveObj = {
+            playerName: gameState.playerName,
+            score: gameState.score,
+            lives: gameState.lives,
+            consecutiveCorrects: gameState.consecutiveCorrects,
+            mode: window.ProblemGenerator.mode
+        };
+        localStorage.setItem('shousuuwarizan_resume_save', JSON.stringify(saveObj));
+    }
+}
+
+function checkResumeData() {
+    const saveDataStr = localStorage.getItem('shousuuwarizan_resume_save');
+    if (saveDataStr) {
+        try {
+            const saveData = JSON.parse(saveDataStr);
+            if (saveData && saveData.score !== undefined && saveData.lives > 0) {
+                let modeJp = "わりきれる";
+                if (saveData.mode === 'remain') modeJp = "あまりあり";
+                else if (saveData.mode === 'approx') modeJp = "がいすう";
+                
+                if (dom.btnResume) {
+                    dom.btnResume.textContent = `つづきから (${modeJp}・${saveData.score}点)`;
+                    dom.btnResume.style.display = 'block';
+                }
+                return;
+            }
+        } catch (e) {
+            console.error("Failed to parse resume save data", e);
+        }
+    }
+    if (dom.btnResume) {
+        dom.btnResume.style.display = 'none';
+    }
+}
+
+function resumeGame() {
+    const saveDataStr = localStorage.getItem('shousuuwarizan_resume_save');
+    if (!saveDataStr) return;
+    
+    try {
+        const saveData = JSON.parse(saveDataStr);
+        window.ProblemGenerator.mode = saveData.mode;
+        if (saveData.mode === 'remain') {
+            window.ProblemGenerator.topicName = "小数の割り算（あまりあり）";
+        } else if (saveData.mode === 'approx') {
+            window.ProblemGenerator.topicName = "小数の割り算（概数）";
+        } else {
+            window.ProblemGenerator.topicName = "小数の割り算";
+        }
+        dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
+        document.title = window.ProblemGenerator.topicName;
+        
+        dom.playerNameInput.value = saveData.playerName || 'ななし';
+        
+        // モード選択ボタンの active クラスを更新
+        const modeBtns = {
+            normal: document.getElementById('btn-mode-normal'),
+            remain: document.getElementById('btn-mode-remain'),
+            approx: document.getElementById('btn-mode-approx')
+        };
+        Object.values(modeBtns).forEach(btn => {
+            if (btn) btn.classList.remove('active');
+        });
+        if (saveData.mode === 'remain' && modeBtns.remain) modeBtns.remain.classList.add('active');
+        else if (saveData.mode === 'approx' && modeBtns.approx) modeBtns.approx.classList.add('active');
+        else if (modeBtns.normal) modeBtns.normal.classList.add('active');
+
+        gameState = {
+            playerName: saveData.playerName || 'ななし',
+            score: saveData.score,
+            lives: saveData.lives,
+            consecutiveCorrects: saveData.consecutiveCorrects || 0,
+            currentProblem: null,
+            userInput: "",
+            userInputQ: "",
+            userInputR: "",
+            activeField: "q",
+            isTransitioning: false
+        };
+        
+        dom.currentScoreDisplay.textContent = gameState.score;
+        updateLivesDisplay();
+        
+        nextProblem();
+        switchScreen('game');
+        setTimeout(() => {
+            resizeCanvas();
+            clearCanvas();
+        }, 10);
+        
+    } catch(e) {
+        console.error("Failed to resume game", e);
+        startGame();
+    }
+}
