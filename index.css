@@ -921,13 +921,13 @@ button:active {
 
 .diagram-arrow-line {
     fill: none;
-    stroke: var(--neon-yellow); /* 同化防止のためイエローに変更 */
+    stroke: #ffffff; /* 白に変更 */
     stroke-width: 6px;
     stroke-linecap: square;
     stroke-linejoin: miter;
     stroke-dasharray: 400;
     stroke-dashoffset: 400;
-    filter: drop-shadow(0px 0px 8px rgba(255, 230, 0, 0.7));
+    filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8)); /* 白いグロー */
     animation: growArrow 0.4s ease-out forwards;
 }
 
@@ -936,8 +936,8 @@ button:active {
 }
 
 .diagram-arrow-head {
-    fill: var(--neon-yellow); /* 同化防止のためイエローに変更 */
-    filter: drop-shadow(0px 0px 8px rgba(255, 230, 0, 0.7));
+    fill: #ffffff; /* 白に変更 */
+    filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8)); /* 白いグロー */
     animation: fadeInBox 0.2s ease-out 0.25s forwards;
     opacity: 0;
 }
