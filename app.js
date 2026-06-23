@@ -59,21 +59,35 @@ function init() {
     const savedName = localStorage.getItem('math_player_name');
     if(savedName && dom.playerNameInput) dom.playerNameInput.value = savedName;
     
-    // Attach Handlers
-    document.getElementById('btn-start').addEventListener('click', startGame);
+    // Attach Handlers (Nullチェックを追加してJSのクラッシュを絶対に防止)
+    const btnStart = document.getElementById('btn-start');
+    if (btnStart) btnStart.addEventListener('click', startGame);
+    
     if (dom.btnResume) {
         dom.btnResume.addEventListener('click', resumeGame);
     }
-    document.getElementById('btn-show-ranking').addEventListener('click', showRanking);
-    document.getElementById('btn-retry').addEventListener('click', () => {
-        checkResumeData();
-        switchScreen('start');
-    });
-    document.getElementById('btn-result-ranking').addEventListener('click', showRanking);
-    document.getElementById('btn-back-home').addEventListener('click', () => {
-        checkResumeData();
-        switchScreen('start');
-    });
+    
+    const btnShowRanking = document.getElementById('btn-show-ranking');
+    if (btnShowRanking) btnShowRanking.addEventListener('click', showRanking);
+    
+    const btnRetry = document.getElementById('btn-retry');
+    if (btnRetry) {
+        btnRetry.addEventListener('click', () => {
+            checkResumeData();
+            switchScreen('start');
+        });
+    }
+    
+    const btnResultRanking = document.getElementById('btn-result-ranking');
+    if (btnResultRanking) btnResultRanking.addEventListener('click', showRanking);
+    
+    const btnBackHome = document.getElementById('btn-back-home');
+    if (btnBackHome) {
+        btnBackHome.addEventListener('click', () => {
+            checkResumeData();
+            switchScreen('start');
+        });
+    }
 
     // Numpad Handlers
     document.querySelectorAll('.num-key').forEach(btn => {
@@ -82,18 +96,34 @@ function init() {
             triggerButtonEffect(btn);
         });
     });
-    document.querySelector('.btn-delete').addEventListener('click', (e) => {
-        backspace();
-        triggerButtonEffect(e.currentTarget);
-    });
-    document.querySelector('.btn-enter').addEventListener('click', (e) => {
-        submitAnswer();
-        triggerButtonEffect(e.currentTarget);
-    });
+    
+    const btnDelete = document.querySelector('.btn-delete');
+    if (btnDelete) {
+        btnDelete.addEventListener('click', (e) => {
+            backspace();
+            triggerButtonEffect(e.currentTarget);
+        });
+    }
+    
+    const btnEnter = document.querySelector('.btn-enter');
+    if (btnEnter) {
+        btnEnter.addEventListener('click', (e) => {
+            submitAnswer();
+            triggerButtonEffect(e.currentTarget);
+        });
+    }
+    
+    // Disable "あまり" button as it's not needed for ratio mode
+    const btnFocusToggle = document.querySelector('.btn-focus-toggle');
+    if (btnFocusToggle) {
+        btnFocusToggle.style.opacity = '0.5';
+        btnFocusToggle.style.pointerEvents = 'none';
+        btnFocusToggle.textContent = 'ー';
+    }
 
     // Keyboard Input Handler (For Chromebook / PC)
     window.addEventListener('keydown', (e) => {
-        if(screens.game.classList.contains('active')) {
+        if(screens.game && screens.game.classList.contains('active')) {
             if(/[0-9\.]/.test(e.key)) {
                 typeChar(e.key);
                 findAndFlashArcadeButton(e.key);
@@ -104,7 +134,7 @@ function init() {
                 submitAnswer();
                 findAndFlashArcadeButton('ENTER');
             }
-        } else if (screens.start.classList.contains('active') && e.key === 'Enter') {
+        } else if (screens.start && screens.start.classList.contains('active') && e.key === 'Enter') {
             startGame();
         }
     });
@@ -115,6 +145,7 @@ function init() {
 
 // --- Button Flash Effects ---
 function triggerButtonEffect(btn) {
+    if (!btn) return;
     btn.style.transform = 'scale(0.9) skewX(-8deg) translateY(2px)';
     setTimeout(() => {
         btn.style.transform = '';
@@ -140,7 +171,7 @@ function switchScreen(screenName) {
 
 // --- Game Logic ---
 function startGame() {
-    const name = dom.playerNameInput.value.trim() || 'CHALLENGER';
+    const name = (dom.playerNameInput ? dom.playerNameInput.value.trim() : 'CHALLENGER') || 'CHALLENGER';
     localStorage.setItem('math_player_name', name);
     
     // 新規スタート時はセーブデータを消去
@@ -265,7 +296,8 @@ function initCanvas() {
     window.addEventListener('touchend', stopDrawing);
     window.addEventListener('touchcancel', stopDrawing);
 
-    document.getElementById('btn-clear-canvas').addEventListener('click', clearCanvas);
+    const btnClear = document.getElementById('btn-clear-canvas');
+    if (btnClear) btnClear.addEventListener('click', clearCanvas);
     window.addEventListener('resize', resizeCanvas);
 }
 
@@ -428,12 +460,13 @@ function submitAnswer() {
     
     isCorrect = Math.abs(inputVal - expectedVal) < 1e-9;
     
-    activeBox.classList.remove('correct', 'wrong');
-    void activeBox.offsetWidth;
+    if (activeBox) activeBox.classList.remove('correct', 'wrong');
+    // Force reflow
+    if (activeBox) void activeBox.offsetWidth;
 
     if(isCorrect) {
         gameState.isTransitioning = true;
-        activeBox.classList.add('correct');
+        if (activeBox) activeBox.classList.add('correct');
         const scoreGain = (window.ProblemGenerator.mode === 'ratio') ? 10 : 20;
         gameState.score += scoreGain;
         if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
@@ -456,7 +489,7 @@ function submitAnswer() {
         // ザンギエフ撃破判定
         if (gameState.rivalLives <= 0) {
             gameState.stage += 1;
-            gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); // ステージアップでザンギエフがタフになる
+            gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); 
             gameState.rivalLives = gameState.rivalMaxLives;
             
             setTimeout(() => {
@@ -464,32 +497,32 @@ function submitAnswer() {
                 updateRivalLivesDisplay();
                 gameState.isTransitioning = false;
                 nextProblem();
-                activeBox.classList.remove('correct');
+                if (activeBox) activeBox.classList.remove('correct');
             }, 500);
         } else {
             setTimeout(() => {
                 gameState.isTransitioning = false;
                 nextProblem();
-                activeBox.classList.remove('correct');
+                if (activeBox) activeBox.classList.remove('correct');
             }, 250);
         }
     } else {
-        activeBox.classList.add('wrong');
+        if (activeBox) activeBox.classList.add('wrong');
         gameState.lives -= 1;
-        gameState.consecutiveCorrects = 0; // コンボ途切れ
+        gameState.consecutiveCorrects = 0; 
         updateComboDisplay();
         updateLivesDisplay();
         
         if (gameState.lives <= 0) {
             setTimeout(() => {
-                activeBox.classList.remove('wrong');
+                if (activeBox) activeBox.classList.remove('wrong');
                 endGame();
             }, 300);
         } else {
             gameState.userInput = "";
             updateInputDisplay();
             setTimeout(() => {
-                activeBox.classList.remove('wrong');
+                if (activeBox) activeBox.classList.remove('wrong');
             }, 300);
         }
     }
@@ -503,7 +536,7 @@ function updateComboDisplay() {
         dom.comboContainer.style.display = 'flex';
         
         dom.comboContainer.classList.remove('active');
-        void dom.comboContainer.offsetWidth; // リフロー
+        void dom.comboContainer.offsetWidth; 
         dom.comboContainer.classList.add('active');
     } else {
         dom.comboContainer.style.display = 'none';
@@ -518,7 +551,6 @@ function endGame() {
     
     if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.score;
     
-    // スコアに応じて勝利・敗北判定
     if (dom.resultStatus) {
         if (gameState.stage >= 2 || gameState.score >= 50) {
             dom.resultStatus.textContent = "VICTORY";
@@ -694,3 +726,6 @@ function resumeGame() {
         startGame();
     }
 }
+
+// Start
+window.addEventListener('DOMContentLoaded', init);
