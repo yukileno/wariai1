@@ -5,9 +5,9 @@
  */
 window.ProblemGenerator = {
     // 表示する「今日のドリル」のタイトル
-    topicName: "割合を求める",
+    topicName: "割合と比率",
 
-    // 現在のモード ("ratio": 割合を求める, "compare": 比べる量を求める, "base": もとにする量を求める)
+    // 現在のモード (単一モードのため、毎回問題生成時にランダムで決定)
     mode: "ratio",
 
     // 色名のリスト
@@ -24,6 +24,11 @@ window.ProblemGenerator = {
 
     // 問題を生成して { questionText, answerText, params } を返す関数
     generate: function() {
+        // 出題形式をランダムに決定 ("ratio" | "compare" | "base")
+        const targets = ["ratio", "compare", "base"];
+        const selectedMode = targets[Math.floor(Math.random() * targets.length)];
+        this.mode = selectedMode; // app.jsでのスコア計算用に更新
+
         const candidateA = [
             0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.5, 1.6, 1.8, 2.0, 2.4, 2.5, 3.0, 3.2, 3.5, 4.0, 4.5, 5.0,
             6, 8, 10, 12, 15, 20, 25, 30, 40, 50
@@ -37,22 +42,17 @@ window.ProblemGenerator = {
         
         while (attempts < 2000) {
             attempts++;
-            // ランダムに選定
             valA = candidateA[Math.floor(Math.random() * candidateA.length)];
             valRatio = candidateRatio[Math.floor(Math.random() * candidateRatio.length)];
             
             // valB = valA * valRatio
-            // 浮動小数点の誤差を考慮して丸める
             valB = Math.round(valA * valRatio * 1000) / 1000;
 
             // フィルター条件
-            // 1. valBが0や負でない
             if (valB <= 0) continue;
-            // 2. valBが大きすぎない（描画や計算のしやすさのため150以下にする）
             if (valB > 150) continue;
-            // 3. valRatioが1（等倍）ではない
             if (valRatio === 1.0) continue;
-            // 4. 小数点以下の桁数が多くても2桁まで（3桁以上の複雑な小数は避ける）
+
             const strA = this.cleanFormat(valA);
             const strB = this.cleanFormat(valB);
             const strRatio = this.cleanFormat(valRatio);
@@ -63,7 +63,6 @@ window.ProblemGenerator = {
 
             if (decA > 2 || decB > 2 || decRatio > 2) continue;
             
-            // 綺麗なペアが見つかったらループ終了
             break;
         }
 
@@ -74,12 +73,10 @@ window.ProblemGenerator = {
             valB = 7.0;
         }
 
-        // 色名をランダムに2つ選定
         const shuffledColors = [...this.colors].sort(() => Math.random() - 0.5);
         const colorA = shuffledColors[0];
         const colorB = shuffledColors[1];
 
-        // 答えを設定
         let answerText = "";
         let questionText = "□にあてはまる数を答えましょう。";
 

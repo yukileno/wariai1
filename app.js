@@ -40,50 +40,14 @@ const dom = {
 
 // --- Initialization ---
 function init() {
-    // Load config from ProblemGenerator
+    // 割合と比率の単一モードに設定
+    window.ProblemGenerator.topicName = "割合と比率";
     dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
     document.title = window.ProblemGenerator.topicName;
     
     // Load saved name
     const savedName = localStorage.getItem('math_player_name');
     if(savedName) dom.playerNameInput.value = savedName;
-
-    // Mode Selector Logic
-    const modeBtns = {
-        normal: document.getElementById('btn-mode-normal'),
-        remain: document.getElementById('btn-mode-remain'),
-        approx: document.getElementById('btn-mode-approx')
-    };
-
-    const updateMode = (selectedMode) => {
-        window.ProblemGenerator.mode = selectedMode;
-        
-        // Remove active class from all
-        Object.values(modeBtns).forEach(btn => {
-            if (btn) btn.classList.remove('active');
-        });
-        
-        if (selectedMode === 'compare') {
-            window.ProblemGenerator.topicName = "比べる量を求める";
-            if (modeBtns.remain) modeBtns.remain.classList.add('active');
-        } else if (selectedMode === 'base') {
-            window.ProblemGenerator.topicName = "もとにする量を求める";
-            if (modeBtns.approx) modeBtns.approx.classList.add('active');
-        } else {
-            window.ProblemGenerator.topicName = "割合を求める";
-            if (modeBtns.normal) modeBtns.normal.classList.add('active');
-        }
-        dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
-        document.title = window.ProblemGenerator.topicName;
-    };
-
-    if (modeBtns.normal && modeBtns.remain) {
-        modeBtns.normal.addEventListener('click', () => updateMode('ratio'));
-        modeBtns.remain.addEventListener('click', () => updateMode('compare'));
-        if (modeBtns.approx) {
-            modeBtns.approx.addEventListener('click', () => updateMode('base'));
-        }
-    }
     
     // Attach Handlers
     document.getElementById('btn-start').addEventListener('click', startGame);
@@ -274,7 +238,6 @@ function typeChar(char) {
     if(gameState.isTransitioning) return;
     
     if(char === '.' && gameState.userInput.includes('.')) return;
-    // 小数第二位までに制限（必要以上に長く打たせない）
     if(gameState.userInput.replace('.', '').length >= 5) return;
     
     gameState.userInput += char;
@@ -290,7 +253,6 @@ function backspace() {
 function updateInputDisplay() {
     dom.userInputBox.textContent = gameState.userInput;
     
-    // 関係図の入力テキストも更新
     const svgInputText = document.getElementById('svg-input-text');
     if (svgInputText) {
         const target = gameState.currentProblem?.params?.target;
@@ -335,7 +297,6 @@ function renderDiagram() {
         ratioClass = "target-field";
     }
 
-    // SVGの構造定義（カクカクのマイクラ看板風）
     const svgHTML = `
     <svg class="ratio-diagram-svg" viewBox="0 0 440 260" xmlns="http://www.w3.org/2000/svg">
         <!-- もとにする量（左の四角） -->
@@ -403,39 +364,37 @@ function submitAnswer() {
     const inputVal = Number(gameState.userInput);
     const expectedVal = Number(gameState.currentProblem.answerText);
     
-    // 浮動小数点数の一致判定（誤差を許容）
     isCorrect = Math.abs(inputVal - expectedVal) < 1e-9;
     
     activeBox.classList.remove('correct', 'wrong');
-    // Force reflow
     void activeBox.offsetWidth;
 
     if(isCorrect) {
         gameState.isTransitioning = true;
         activeBox.classList.add('correct');
+        // 問題タイプに応じて配点を設定（割合: 10点, その他: 20点）
         const scoreGain = (window.ProblemGenerator.mode === 'ratio') ? 10 : 20;
         gameState.score += scoreGain;
         dom.currentScoreDisplay.textContent = gameState.score;
         
-        // 5問連続正解でライフ全回復
         gameState.consecutiveCorrects += 1;
         if (gameState.consecutiveCorrects >= 5) {
             if (gameState.lives < 3) {
                 gameState.lives = 3;
                 updateLivesDisplay();
             }
-            gameState.consecutiveCorrects = 0; // リセット
+            gameState.consecutiveCorrects = 0;
         }
         
         setTimeout(() => {
             gameState.isTransitioning = false;
             nextProblem();
             activeBox.classList.remove('correct');
-        }, 250); // slight delay to show green color
+        }, 250);
     } else {
         activeBox.classList.add('wrong');
         gameState.lives -= 1;
-        gameState.consecutiveCorrects = 0; // ミスで連続正解リセット
+        gameState.consecutiveCorrects = 0;
         updateLivesDisplay();
         
         if (gameState.lives <= 0) {
@@ -550,8 +509,7 @@ function saveGameProgress() {
             playerName: gameState.playerName,
             score: gameState.score,
             lives: gameState.lives,
-            consecutiveCorrects: gameState.consecutiveCorrects,
-            mode: window.ProblemGenerator.mode
+            consecutiveCorrects: gameState.consecutiveCorrects
         };
         localStorage.setItem('wariai_resume_save', JSON.stringify(saveObj));
     }
@@ -563,12 +521,8 @@ function checkResumeData() {
         try {
             const saveData = JSON.parse(saveDataStr);
             if (saveData && saveData.score !== undefined && saveData.lives > 0) {
-                let modeJp = "割合を求める";
-                if (saveData.mode === 'compare') modeJp = "比べる量を求める";
-                else if (saveData.mode === 'base') modeJp = "もとにする量を求める";
-                
                 if (dom.btnResume) {
-                    dom.btnResume.textContent = `つづきから (${modeJp}・${saveData.score}点)`;
+                    dom.btnResume.textContent = `つづきから (${saveData.score}点)`;
                     dom.btnResume.style.display = 'block';
                 }
                 return;
@@ -588,30 +542,11 @@ function resumeGame() {
     
     try {
         const saveData = JSON.parse(saveDataStr);
-        window.ProblemGenerator.mode = saveData.mode;
-        if (saveData.mode === 'compare') {
-            window.ProblemGenerator.topicName = "比べる量を求める";
-        } else if (saveData.mode === 'base') {
-            window.ProblemGenerator.topicName = "もとにする量を求める";
-        } else {
-            window.ProblemGenerator.topicName = "割合を求める";
-        }
+        window.ProblemGenerator.topicName = "割合と比率";
         dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
         document.title = window.ProblemGenerator.topicName;
         
         dom.playerNameInput.value = saveData.playerName || 'ななし';
-        
-        const modeBtns = {
-            normal: document.getElementById('btn-mode-normal'),
-            remain: document.getElementById('btn-mode-remain'),
-            approx: document.getElementById('btn-mode-approx')
-        };
-        Object.values(modeBtns).forEach(btn => {
-            if (btn) btn.classList.remove('active');
-        });
-        if (saveData.mode === 'compare' && modeBtns.remain) modeBtns.remain.classList.add('active');
-        else if (saveData.mode === 'base' && modeBtns.approx) modeBtns.approx.classList.add('active');
-        else if (modeBtns.normal) modeBtns.normal.classList.add('active');
 
         gameState = {
             playerName: saveData.playerName || 'ななし',
