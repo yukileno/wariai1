@@ -7,11 +7,8 @@ window.ProblemGenerator = {
     // 表示する「今日のドリル」のタイトル
     topicName: "割合と比率",
 
-    // 現在のモード (単一モードのため、毎回問題生成時にサイクルで決定)
+    // 現在のモード (単一モードのため、毎回問題生成時にランダムで決定)
     mode: "ratio",
-
-    // 出題タイプのサイクル用のカウンタ
-    modeCounter: 0,
 
     // 色名のリスト
     colors: ["白", "赤", "青", "黄", "緑", "ピンク", "オレンジ", "黒", "茶", "水色"],
@@ -27,11 +24,10 @@ window.ProblemGenerator = {
 
     // 問題を生成して { questionText, answerText, params } を返す関数
     generate: function() {
-        // 出題形式を偏りなく均等に出すため、サイクル（順番）で決定
-        // ("ratio" (割合) -> "compare" (比べる量) -> "base" (もとにする量))
+        // 出題形式をランダム（各タイプ1/3の等確率）で決定
+        // ("ratio" (割合) | "compare" (比べる量) | "base" (もとにする量))
         const targets = ["ratio", "compare", "base"];
-        const selectedMode = targets[this.modeCounter % targets.length];
-        this.modeCounter++;
+        const selectedMode = targets[Math.floor(Math.random() * targets.length)];
         this.mode = selectedMode; // app.jsでのスコア計算用に更新
 
         const candidateA = [
