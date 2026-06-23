@@ -22,8 +22,9 @@ const screens = {
 
 const dom = {
     playerNameInput: document.getElementById('player-name'),
+    playerNameDisplay: document.getElementById('player-name-display'),
     topicNameDisplay: document.getElementById('topic-name'),
-    livesLeftDisplay: document.getElementById('lives-left'),
+    lifeBar: document.getElementById('player-life-bar'),
     currentScoreDisplay: document.getElementById('current-score'),
     questionText: document.getElementById('question-text'),
     
@@ -32,22 +33,25 @@ const dom = {
     userInputBox: document.getElementById('user-input'),
     
     finalScoreValue: document.getElementById('final-score-value'),
+    resultStatus: document.getElementById('result-status'),
     savingStatus: document.getElementById('saving-status'),
     rankingList: document.getElementById('ranking-list'),
     btnResume: document.getElementById('btn-resume'),
-    diagramContainer: document.getElementById('diagram-container')
+    diagramContainer: document.getElementById('diagram-container'),
+    comboContainer: document.getElementById('combo-container'),
+    comboCount: document.getElementById('combo-count')
 };
 
 // --- Initialization ---
 function init() {
     // 割合と比率の単一モードに設定
     window.ProblemGenerator.topicName = "割合と比率";
-    dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
+    if (dom.topicNameDisplay) dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
     document.title = window.ProblemGenerator.topicName;
     
     // Load saved name
     const savedName = localStorage.getItem('math_player_name');
-    if(savedName) dom.playerNameInput.value = savedName;
+    if(savedName && dom.playerNameInput) dom.playerNameInput.value = savedName;
     
     // Attach Handlers
     document.getElementById('btn-start').addEventListener('click', startGame);
@@ -67,28 +71,33 @@ function init() {
 
     // Numpad Handlers
     document.querySelectorAll('.num-key').forEach(btn => {
-        btn.addEventListener('click', () => typeChar(btn.textContent));
+        btn.addEventListener('click', () => {
+            typeChar(btn.textContent.trim());
+            triggerButtonEffect(btn);
+        });
     });
-    document.querySelector('.btn-delete').addEventListener('click', backspace);
-    document.querySelector('.btn-enter').addEventListener('click', submitAnswer);
-    
-    // Disable "あまり" button as it's not needed for ratio mode
-    const btnFocusToggle = document.querySelector('.btn-focus-toggle');
-    if (btnFocusToggle) {
-        btnFocusToggle.style.opacity = '0.5';
-        btnFocusToggle.style.pointerEvents = 'none';
-        btnFocusToggle.textContent = 'ー';
-    }
+    document.querySelector('.btn-delete').addEventListener('click', (e) => {
+        backspace();
+        triggerButtonEffect(e.currentTarget);
+    });
+    document.querySelector('.btn-enter').addEventListener('click', (e) => {
+        submitAnswer();
+        triggerButtonEffect(e.currentTarget);
+    });
 
     // Keyboard Input Handler (For Chromebook / PC)
     window.addEventListener('keydown', (e) => {
         if(screens.game.classList.contains('active')) {
             if(/[0-9\.]/.test(e.key)) {
                 typeChar(e.key);
+                // キーボードに対応するアケコンボタンのフラッシュ効果
+                findAndFlashArcadeButton(e.key);
             } else if(e.key === 'Backspace') {
                 backspace();
+                findAndFlashArcadeButton('DEL');
             } else if(e.key === 'Enter') {
                 submitAnswer();
+                findAndFlashArcadeButton('ENTER');
             }
         } else if (screens.start.classList.contains('active') && e.key === 'Enter') {
             startGame();
@@ -99,15 +108,34 @@ function init() {
     checkResumeData();
 }
 
+// --- Button Flash Effects ---
+function triggerButtonEffect(btn) {
+    btn.style.transform = 'scale(0.9) skewX(-8deg) translateY(2px)';
+    setTimeout(() => {
+        btn.style.transform = '';
+    }, 80);
+}
+
+function findAndFlashArcadeButton(keyChar) {
+    const buttons = document.querySelectorAll('.btn-arcade');
+    buttons.forEach(btn => {
+        if (btn.textContent.trim() === keyChar) {
+            triggerButtonEffect(btn);
+        }
+    });
+}
+
 // --- Screen Management ---
 function switchScreen(screenName) {
-    Object.values(screens).forEach(s => s.classList.remove('active'));
-    screens[screenName].classList.add('active');
+    Object.values(screens).forEach(s => {
+        if (s) s.classList.remove('active');
+    });
+    if (screens[screenName]) screens[screenName].classList.add('active');
 }
 
 // --- Game Logic ---
 function startGame() {
-    const name = dom.playerNameInput.value.trim() || 'ななし';
+    const name = dom.playerNameInput.value.trim() || 'CHALLENGER';
     localStorage.setItem('math_player_name', name);
     
     // 新規スタート時はセーブデータを消去
@@ -123,8 +151,11 @@ function startGame() {
         isTransitioning: false
     };
     
-    dom.currentScoreDisplay.textContent = gameState.score;
+    if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = name;
+    if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
     updateLivesDisplay();
+    
+    if (dom.comboContainer) dom.comboContainer.style.display = 'none';
     
     nextProblem();
     switchScreen('game');
@@ -135,7 +166,19 @@ function startGame() {
 }
 
 function updateLivesDisplay() {
-    dom.livesLeftDisplay.textContent = gameState.lives;
+    if (dom.lifeBar) {
+        const lifePercent = (gameState.lives / 3) * 100;
+        dom.lifeBar.style.width = lifePercent + '%';
+        
+        // 残りライフ数に応じてネオンの色をグラデーション変更
+        if (gameState.lives === 1) {
+            dom.lifeBar.style.background = 'linear-gradient(90deg, #ff0000, #ff5d00)';
+            dom.lifeBar.style.boxShadow = '0 0 10px #ff0044';
+        } else {
+            dom.lifeBar.style.background = 'linear-gradient(90deg, #ff8c00, var(--neon-yellow))';
+            dom.lifeBar.style.boxShadow = '0 0 8px var(--neon-yellow)';
+        }
+    }
 }
 
 function nextProblem() {
@@ -153,7 +196,7 @@ function nextProblem() {
     renderDiagram();
 }
 
-// --- Canvas Drawing Logic ---
+// --- Canvas Drawing Logic (Neon Spray Pen) ---
 let ctx = null;
 
 function initCanvas() {
@@ -220,10 +263,14 @@ function resizeCanvas() {
         canvas.width = rect.width;
         canvas.height = rect.height;
         if(ctx) {
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#3d2c18'; // Oak sign ink color
+            
+            // SF6 ネオンスプレーペン設定
+            ctx.strokeStyle = '#ffe600'; 
+            ctx.shadowColor = '#ffe600';
+            ctx.shadowBlur = 6;
         }
     }
 }
@@ -251,7 +298,7 @@ function backspace() {
 }
 
 function updateInputDisplay() {
-    dom.userInputBox.textContent = gameState.userInput;
+    if (dom.userInputBox) dom.userInputBox.textContent = gameState.userInput;
     
     const svgInputText = document.getElementById('svg-input-text');
     if (svgInputText) {
@@ -301,20 +348,20 @@ function renderDiagram() {
     <svg class="ratio-diagram-svg" viewBox="0 0 440 260" xmlns="http://www.w3.org/2000/svg">
         <!-- もとにする量（左の四角） -->
         <g transform="translate(40, 60)">
-            <rect class="diagram-box" x="0" y="0" width="110" height="60" />
+            <rect class="diagram-box" x="0" y="0" width="110" height="60" rx="3" />
             <text class="diagram-text-label" x="55" y="34">${labelA}</text>
         </g>
         
         <!-- 比べる量（右の四角） -->
         <g transform="translate(290, 60)">
-            <rect class="diagram-box" x="0" y="0" width="110" height="60" />
+            <rect class="diagram-box" x="0" y="0" width="110" height="60" rx="3" />
             <text class="diagram-text-label" x="55" y="34">${labelB}</text>
         </g>
 
         <!-- もとにする量の下の数値 -->
         <g transform="translate(40, 130)">
             ${target === "base" ? `
-                <rect class="diagram-input-box ${valueAClass}" x="5" y="5" width="100" height="40" />
+                <rect class="diagram-input-box ${valueAClass}" x="5" y="5" width="100" height="40" rx="4" />
                 <text id="svg-input-text" class="diagram-input-text" x="55" y="30">${gameState.userInput || "?"}m</text>
             ` : `
                 <text class="diagram-text-value" x="55" y="28">${textA}</text>
@@ -324,7 +371,7 @@ function renderDiagram() {
         <!-- 比べる量の下の数値 -->
         <g transform="translate(290, 130)">
             ${target === "compare" ? `
-                <rect class="diagram-input-box ${valueBClass}" x="5" y="5" width="100" height="40" />
+                <rect class="diagram-input-box ${valueBClass}" x="5" y="5" width="100" height="40" rx="4" />
                 <text id="svg-input-text" class="diagram-input-text" x="55" y="30">${gameState.userInput || "?"}m</text>
             ` : `
                 <text class="diagram-text-value" x="55" y="28">${textB}</text>
@@ -336,16 +383,16 @@ function renderDiagram() {
             <!-- 矢印の線 -->
             <path class="diagram-arrow-line" d="M 160,90 H 270" />
             <!-- 矢印の頭 -->
-            <polygon class="diagram-arrow-head" points="262,80 276,90 262,100" />
+            <polygon class="diagram-arrow-head" points="260,78 276,90 260,102" />
         </g>
 
         <!-- 割合（矢印の上） -->
         <g transform="translate(170, 20)">
             ${target === "ratio" ? `
-                <rect class="diagram-input-box ${ratioClass}" x="5" y="5" width="90" height="40" />
+                <rect class="diagram-input-box ${ratioClass}" x="5" y="5" width="90" height="40" rx="4" />
                 <text id="svg-input-text" class="diagram-input-text" x="50" y="30">${gameState.userInput || "?"}倍</text>
             ` : `
-                <text class="diagram-text-value" style="fill: #3d2c18;" x="50" y="28">${textRatio}</text>
+                <text class="diagram-text-value" style="fill: var(--neon-yellow);" x="50" y="28">${textRatio}</text>
             `}
         </g>
     </svg>
@@ -372,18 +419,20 @@ function submitAnswer() {
     if(isCorrect) {
         gameState.isTransitioning = true;
         activeBox.classList.add('correct');
-        // 問題タイプに応じて配点を設定（割合: 10点, その他: 20点）
         const scoreGain = (window.ProblemGenerator.mode === 'ratio') ? 10 : 20;
         gameState.score += scoreGain;
-        dom.currentScoreDisplay.textContent = gameState.score;
+        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
         
+        // 連続正解（コンボ）処理
         gameState.consecutiveCorrects += 1;
-        if (gameState.consecutiveCorrects >= 5) {
+        updateComboDisplay();
+        
+        // 5問連続正解でライフ全回復
+        if (gameState.consecutiveCorrects % 5 === 0) {
             if (gameState.lives < 3) {
                 gameState.lives = 3;
                 updateLivesDisplay();
             }
-            gameState.consecutiveCorrects = 0;
         }
         
         setTimeout(() => {
@@ -394,7 +443,8 @@ function submitAnswer() {
     } else {
         activeBox.classList.add('wrong');
         gameState.lives -= 1;
-        gameState.consecutiveCorrects = 0;
+        gameState.consecutiveCorrects = 0; // コンボ途切れ
+        updateComboDisplay();
         updateLivesDisplay();
         
         if (gameState.lives <= 0) {
@@ -412,12 +462,43 @@ function submitAnswer() {
     }
 }
 
+function updateComboDisplay() {
+    if (!dom.comboContainer || !dom.comboCount) return;
+    
+    if (gameState.consecutiveCorrects >= 2) {
+        dom.comboCount.textContent = gameState.consecutiveCorrects;
+        dom.comboContainer.style.display = 'flex';
+        
+        // コンボポップアニメーションのリセット・強制実行
+        dom.comboContainer.classList.remove('active');
+        void dom.comboContainer.offsetWidth; // リフロー
+        dom.comboContainer.classList.add('active');
+    } else {
+        dom.comboContainer.style.display = 'none';
+    }
+}
+
 function endGame() {
     localStorage.removeItem('wariai_resume_save');
     if (dom.btnResume) {
         dom.btnResume.style.display = 'none';
     }
-    dom.finalScoreValue.textContent = gameState.score;
+    
+    if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.score;
+    
+    // スコアに応じて勝利・敗北の表示切り替え（格ゲー風）
+    if (dom.resultStatus) {
+        if (gameState.score >= 50) {
+            dom.resultStatus.textContent = "VICTORY";
+            dom.resultStatus.style.color = "var(--neon-yellow)";
+            dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 230, 0, 0.6), 3px 3px 0 #000";
+        } else {
+            dom.resultStatus.textContent = "DEFEAT";
+            dom.resultStatus.style.color = "var(--neon-pink)";
+            dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 0, 119, 0.6), 3px 3px 0 #000";
+        }
+    }
+    
     switchScreen('result');
     submitScoreToGAS();
 }
@@ -425,11 +506,11 @@ function endGame() {
 // --- API Logic ---
 async function submitScoreToGAS() {
     if(GAS_API_URL === "YOUR_GAS_ENDPOINT_URL_HERE") {
-        dom.savingStatus.textContent = "※GASのURL未設定のため保存されません";
+        if (dom.savingStatus) dom.savingStatus.textContent = "※GASのURL未設定のため保存されません";
         return;
     }
 
-    dom.savingStatus.textContent = "ランキングに送信中...";
+    if (dom.savingStatus) dom.savingStatus.textContent = "UPLOADING DATA...";
     try {
         await fetch(GAS_API_URL, {
             method: 'POST',
@@ -445,19 +526,19 @@ async function submitScoreToGAS() {
                 'Content-Type': 'text/plain'
             }
         });
-        dom.savingStatus.textContent = "送信完了！";
+        if (dom.savingStatus) dom.savingStatus.textContent = "DATA UPLOADED!";
     } catch(e) {
         console.error(e);
-        dom.savingStatus.textContent = "送信エラーまたは通信エラー"; 
+        if (dom.savingStatus) dom.savingStatus.textContent = "UPLOAD FAILED (CORS/OFFLINE)"; 
     }
 }
 
 async function showRanking() {
     switchScreen('ranking');
-    dom.rankingList.innerHTML = '<div class="loading-spinner"></div>';
+    if (dom.rankingList) dom.rankingList.innerHTML = '<div class="loading-spinner-sf6"></div>';
     
     if(GAS_API_URL === "YOUR_GAS_ENDPOINT_URL_HERE") {
-        dom.rankingList.innerHTML = '<div style="text-align:center; margin-top: 20px;">GASのURLが設定されていません。<br>ローカルでは遊べます！</div>';
+        if (dom.rankingList) dom.rankingList.innerHTML = '<div style="text-align:center; margin-top: 20px;">GASのURLが設定されていません。<br>ローカルでは遊べます！</div>';
         return;
     }
 
@@ -465,6 +546,7 @@ async function showRanking() {
         const res = await fetch(`${GAS_API_URL}?action=getTop&sheetName=${APP_SHEET_NAME}&topic=${encodeURIComponent(window.ProblemGenerator.topicName)}&limit=100&t=${Date.now()}`);
         const data = await res.json();
         
+        if (!dom.rankingList) return;
         dom.rankingList.innerHTML = '';
         if(data.ranking && data.ranking.length > 0) {
             const filteredRanking = data.ranking.filter(r => parseInt(r.score, 10) > 0);
@@ -483,7 +565,7 @@ async function showRanking() {
                     item.innerHTML = `
                         <span class="${rankClass}">${idx + 1}位</span>
                         <span>${r.name}</span>
-                        <span style="color:var(--primary); font-weight:bold;">${r.score}</span>
+                        <span style="color:var(--neon-cyan); font-weight:bold;">${r.score}</span>
                     `;
                     dom.rankingList.appendChild(item);
                 });
@@ -495,7 +577,7 @@ async function showRanking() {
         }
     } catch(e) {
         console.error(e);
-        dom.rankingList.innerHTML = '<div style="text-align:center; margin-top: 20px;">ランキングの取得に失敗しました。詳細：CORS</div>';
+        if (dom.rankingList) dom.rankingList.innerHTML = '<div style="text-align:center; margin-top: 20px;">ランキングの取得に失敗しました。詳細：CORS</div>';
     }
 }
 
@@ -543,13 +625,13 @@ function resumeGame() {
     try {
         const saveData = JSON.parse(saveDataStr);
         window.ProblemGenerator.topicName = "割合と比率";
-        dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
+        if (dom.topicNameDisplay) dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
         document.title = window.ProblemGenerator.topicName;
         
-        dom.playerNameInput.value = saveData.playerName || 'ななし';
+        if (dom.playerNameInput) dom.playerNameInput.value = saveData.playerName || 'CHALLENGER';
 
         gameState = {
-            playerName: saveData.playerName || 'ななし',
+            playerName: saveData.playerName || 'CHALLENGER',
             score: saveData.score,
             lives: saveData.lives,
             consecutiveCorrects: saveData.consecutiveCorrects || 0,
@@ -558,8 +640,10 @@ function resumeGame() {
             isTransitioning: false
         };
         
-        dom.currentScoreDisplay.textContent = gameState.score;
+        if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = gameState.playerName;
+        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
         updateLivesDisplay();
+        updateComboDisplay();
         
         nextProblem();
         switchScreen('game');

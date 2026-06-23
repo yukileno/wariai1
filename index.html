@@ -3,97 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>郡中っ子 計算グランプリ</title>
+    <title>割合と比率 - STREET BATTLE</title>
+    <!-- SF6風フォントをインポート -->
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Teko:wght@500;700&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=M+PLUS+Rounded+1c:wght@700&family=DotGothic16&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="app" class="glass-container">
-        <!-- Start Screen -->
+    <div id="app" class="sf6-app-container">
+        <!-- Start Screen (VS Battle Screen) -->
         <div id="screen-start" class="screen active">
-            <h1 class="logo">郡中っ子<br><span>計算グランプリ</span></h1>
-            <p class="description">今日のお題: <span id="topic-name">割合と比率</span></p>
-            <input type="text" id="player-name" placeholder="なまえをいれてね" autocomplete="off" />
-            <button id="btn-start" class="primary-btn">スタート！</button>
-            <button id="btn-resume" class="primary-btn" style="display: none; background: #187a3a; border-color: #3cd47a #083b18 #083b18 #3cd47a; text-shadow: 2px 2px 0px #082b12; margin-bottom: 15px;">つづきからあそぶ</button>
-            <button id="btn-show-ranking" class="secondary-btn">ランキングをみる</button>
-        </div>
-
-        <!-- Game Screen -->
-        <div id="screen-game" class="screen">
-            <div class="game-header">
-                <div class="hud-group">
-                    <div class="hud-item lives-hud">
-                        <span class="hud-icon">❤️</span>
-                        <span class="hud-text">LIVES:</span>
-                        <span id="lives-left" class="hud-value">3</span>
+            <div class="logo-area">
+                <h1 class="logo-sf6">WARIAI<br><span>BATTLE</span></h1>
+                <p class="subtitle-sf6">STREET FIGHTING MATH</p>
+            </div>
+            
+            <div class="vs-container">
+                <!-- 1P Player -->
+                <div class="vs-card player-card">
+                    <div class="card-side-label p1-color">1P</div>
+                    <div class="player-input-wrap">
+                        <input type="text" id="player-name" placeholder="CHALLENGER NAME" autocomplete="off" maxlength="10" />
                     </div>
-                    <div class="hud-item score-hud">
-                        <span class="hud-icon">🪙</span>
-                        <span class="hud-text">SCORE:</span>
-                        <span id="current-score" class="hud-value">0</span>
-                    </div>
+                </div>
+                
+                <!-- VS Logo -->
+                <div class="vs-logo-wrapper">
+                    <span class="vs-logo-text">VS</span>
+                </div>
+                
+                <!-- CPU Rival -->
+                <div class="vs-card rival-card">
+                    <div class="card-side-label cpu-color">CPU</div>
+                    <div class="rival-name">MATH MASTER</div>
                 </div>
             </div>
             
+            <div class="menu-buttons-sf6">
+                <button id="btn-start" class="primary-btn-sf6">BATTLE START</button>
+                <button id="btn-resume" class="resume-btn-sf6" style="display: none;">RESUME BATTLE</button>
+                <button id="btn-show-ranking" class="secondary-btn-sf6">LEADERBOARD</button>
+            </div>
+        </div>
+
+        <!-- Game Screen (Battle Stage) -->
+        <div id="screen-game" class="screen">
+            <div class="game-header">
+                <!-- Life Bar (P1) -->
+                <div class="hud-item-sf6 player-hud">
+                    <div class="hud-meta">
+                        <span class="p1-label">1P</span>
+                        <span id="player-name-display" class="hud-player-name">CHALLENGER</span>
+                    </div>
+                    <div class="life-bar-wrapper">
+                        <div id="player-life-bar" class="life-bar-fill" style="width: 100%;"></div>
+                        <div class="life-bar-bg"></div>
+                    </div>
+                </div>
+                
+                <!-- Score (Gold/Coins) -->
+                <div class="hud-item-sf6 score-hud">
+                    <span class="score-label">SCORE</span>
+                    <span id="current-score" class="hud-value">0</span>
+                </div>
+            </div>
+            
+            <!-- Combo Counter Overlay -->
+            <div id="combo-container" class="combo-counter" style="display: none;">
+                <span id="combo-count">0</span>
+                <span class="combo-label">COMBOS!</span>
+            </div>
+            
             <div class="problem-board">
+                <!-- Question and Answer Box -->
                 <div class="question-container">
-                    <div id="question-text" class="question">計算しましょう。</div>
-                    <div class="equals-sign">＝</div>
-                    <div class="answer-box" id="answer-box-normal">
+                    <div id="question-text" class="question">□に入る数を答えてKOしろ！</div>
+                    
+                    <div class="answer-box-sf6" id="answer-box-normal">
                         <span id="user-input" class="user-input-text"></span>
                         <span class="cursor"></span>
                     </div>
-                    <div class="answer-box remain-box" id="answer-box-remain" style="display: none;">
-                        <div class="input-slot active" id="slot-q">
-                            <span id="user-input-q" class="user-input-text"></span>
-                            <span class="cursor q-cursor"></span>
-                        </div>
-                        <span class="remain-label">あまり</span>
-                        <div class="input-slot" id="slot-r">
-                            <span id="user-input-r" class="user-input-text"></span>
-                            <span class="cursor r-cursor" style="display: none;"></span>
-                        </div>
-                    </div>
                 </div>
+                
+                <!-- Canvas & Diagram Area (Spray Wall) -->
                 <div id="calc-area">
                     <div id="diagram-container"></div>
                     <canvas id="calc-canvas"></canvas>
-                    <button id="btn-clear-canvas" class="btn-clear-canvas">消す</button>
+                    <button id="btn-clear-canvas" class="btn-clear-canvas">RESET</button>
                 </div>
             </div>
 
-            <!-- Numpad for touch/mouse -->
-            <div class="numpad">
-                <button class="num-key">7</button><button class="num-key">8</button><button class="num-key">9</button>
-                <button class="num-key">4</button><button class="num-key">5</button><button class="num-key">6</button>
-                <button class="num-key">1</button><button class="num-key">2</button><button class="num-key">3</button>
-                <button class="num-key">0</button><button class="num-key dot-key">.</button><button class="cmd-key btn-focus-toggle">あまり</button>
-                <button class="cmd-key btn-delete" style="grid-column: span 1;">消す</button>
-                <button class="cmd-key btn-enter" style="grid-column: span 2;">こたえる！</button>
+            <!-- Arcade Button Numpad -->
+            <div class="numpad-sf6">
+                <button class="num-key btn-arcade color-yellow">7</button>
+                <button class="num-key btn-arcade color-yellow">8</button>
+                <button class="num-key btn-arcade color-yellow">9</button>
+                
+                <button class="num-key btn-arcade color-cyan">4</button>
+                <button class="num-key btn-arcade color-cyan">5</button>
+                <button class="num-key btn-arcade color-cyan">6</button>
+                
+                <button class="num-key btn-arcade color-pink">1</button>
+                <button class="num-key btn-arcade color-pink">2</button>
+                <button class="num-key btn-arcade color-pink">3</button>
+                
+                <button class="num-key btn-arcade color-white">0</button>
+                <button class="num-key btn-arcade color-white">.</button>
+                <button class="cmd-key btn-arcade btn-focus-toggle color-dark">ー</button>
+                
+                <button class="cmd-key btn-arcade btn-delete color-dark" style="grid-column: span 1;">DEL</button>
+                <button class="cmd-key btn-arcade btn-enter color-gold" style="grid-column: span 2;">ENTER</button>
             </div>
         </div>
 
-        <!-- Result Screen -->
+        <!-- Result Screen (K.O. / Victory Screen) -->
         <div id="screen-result" class="screen">
-            <h2>タイムアップ！</h2>
-            <div class="final-score">
-                <span class="score-label">あなたのスコア</span>
-                <span id="final-score-value" class="score-value">150</span>
+            <div class="ko-banner">K.O.</div>
+            <h2 id="result-status" class="result-title">VICTORY</h2>
+            <div class="final-score-sf6">
+                <span class="score-label">FINAL SCORE</span>
+                <span id="final-score-value" class="score-value">0</span>
             </div>
-            <p id="saving-status" class="status-msg">ランキングに送信中...</p>
-            <button id="btn-retry" class="primary-btn">もういちど</button>
-            <button id="btn-result-ranking" class="secondary-btn">ランキングへ</button>
+            <p id="saving-status" class="status-msg">UPLOADING DATA...</p>
+            <div class="menu-buttons-sf6">
+                <button id="btn-retry" class="primary-btn-sf6">PLAY AGAIN</button>
+                <button id="btn-result-ranking" class="secondary-btn-sf6">LEADERBOARD</button>
+            </div>
         </div>
 
-        <!-- Ranking Screen -->
+        <!-- Ranking Screen (Leaderboard) -->
         <div id="screen-ranking" class="screen">
-            <h2>🏆 T O P 1 0 0 🏆</h2>
-            <div id="ranking-list" class="ranking-board">
-                <div class="loading-spinner"></div>
+            <h2 class="leaderboard-title">LEADERBOARD</h2>
+            <div id="ranking-list" class="ranking-board-sf6">
+                <div class="loading-spinner-sf6"></div>
             </div>
-            <button id="btn-back-home" class="primary-btn">もどる</button>
+            <button id="btn-back-home" class="primary-btn-sf6">BACK TO MENU</button>
         </div>
     </div>
 
