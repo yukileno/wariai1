@@ -1,14 +1,15 @@
 // --- Configuration ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyno-Otdjr5xQnC2t3ZWZhNJAJPA3WeJLM6K52cKzJ2XuFjzL1aBHydSr29rN2PsVR5mQ/exec";
 const APP_SHEET_NAME = "wariai"; // 割合・比率用
+const LOCAL_STORAGE_KEY = "wariai1_sf6_save_v1"; // ドメイン間干渉を防ぐためのユニークなキー
 
 let gameState = {
     playerName: "",
     score: 0,
     lives: 3,
-    rivalLives: 5,       // ザンギエフのライフ（5問正解で1KO）
+    rivalLives: 5,
     rivalMaxLives: 5,
-    stage: 1,            // 格ゲーのステージ数 (ザンギエフ撃破でアップ)
+    stage: 1,
     consecutiveCorrects: 0,
     currentProblem: null,
     userInput: "",
@@ -143,7 +144,7 @@ function startGame() {
     localStorage.setItem('math_player_name', name);
     
     // 新規スタート時はセーブデータを消去
-    localStorage.removeItem('wariai_resume_save');
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
     
     gameState = {
         playerName: name,
@@ -276,7 +277,7 @@ function resizeCanvas() {
         canvas.width = rect.width;
         canvas.height = rect.height;
         if(ctx) {
-            ctx.lineWidth = 5; // 太くしてスプレー感強化
+            ctx.lineWidth = 5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = '#ffe600'; 
@@ -322,7 +323,7 @@ function updateInputDisplay() {
     }
 }
 
-// --- SVG Diagram Rendering (視認性向上版) ---
+// --- SVG Diagram Rendering ---
 function renderDiagram() {
     if (!gameState.currentProblem || !gameState.currentProblem.params || !dom.diagramContainer) return;
     const params = gameState.currentProblem.params;
@@ -458,7 +459,6 @@ function submitAnswer() {
             gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); // ステージアップでザンギエフがタフになる
             gameState.rivalLives = gameState.rivalMaxLives;
             
-            // 撃破演出としての若干のウェイト
             setTimeout(() => {
                 if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
                 updateRivalLivesDisplay();
@@ -511,14 +511,14 @@ function updateComboDisplay() {
 }
 
 function endGame() {
-    localStorage.removeItem('wariai_resume_save');
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
     if (dom.btnResume) {
         dom.btnResume.style.display = 'none';
     }
     
     if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.score;
     
-    // スコア(または撃破ステージ)に応じて勝利・敗北判定
+    // スコアに応じて勝利・敗北判定
     if (dom.resultStatus) {
         if (gameState.stage >= 2 || gameState.score >= 50) {
             dom.resultStatus.textContent = "VICTORY";
@@ -625,12 +625,12 @@ function saveGameProgress() {
             stage: gameState.stage,
             consecutiveCorrects: gameState.consecutiveCorrects
         };
-        localStorage.setItem('wariai_resume_save', JSON.stringify(saveObj));
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(saveObj));
     }
 }
 
 function checkResumeData() {
-    const saveDataStr = localStorage.getItem('wariai_resume_save');
+    const saveDataStr = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saveDataStr) {
         try {
             const saveData = JSON.parse(saveDataStr);
@@ -651,7 +651,7 @@ function checkResumeData() {
 }
 
 function resumeGame() {
-    const saveDataStr = localStorage.getItem('wariai_resume_save');
+    const saveDataStr = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!saveDataStr) return;
     
     try {
@@ -666,8 +666,8 @@ function resumeGame() {
             playerName: saveData.playerName || 'CHALLENGER',
             score: saveData.score,
             lives: saveData.lives,
-            rivalLives: saveData.rivalLives || 5,
-            rivalMaxLives: saveData.rivalMaxLives || 5,
+            rivalLives: saveData.rivalLives !== undefined ? saveData.rivalLives : 5,
+            rivalMaxLives: saveData.rivalMaxLives !== undefined ? saveData.rivalMaxLives : 5,
             stage: saveData.stage || 1,
             consecutiveCorrects: saveData.consecutiveCorrects || 0,
             currentProblem: null,
@@ -694,6 +694,3 @@ function resumeGame() {
         startGame();
     }
 }
-
-// Start
-window.addEventListener('DOMContentLoaded', init);
