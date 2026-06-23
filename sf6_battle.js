@@ -17,6 +17,137 @@ let gameState = {
     isTransitioning: false
 };
 
+// --- SF6 Sound Manager (HTML5 Audio Player) ---
+class SF6SoundManager {
+    constructor() {
+        this.soundPaths = {
+            correct: 'sound/correct.mp3',
+            wrong: 'sound/wrong.mp3',
+            fireNormal: 'sound/hadouken_fire.mp3',
+            fireEx: 'sound/hadouken_fire_ex.mp3',
+            fireShakunetsu: 'sound/hadouken_fire_shakunetsu.mp3',
+            hitNormal: 'sound/hit_normal.mp3',
+            hitCritical: 'sound/hit_critical.mp3',
+            ko: 'sound/ko.mp3',
+            victory: 'sound/victory.mp3',
+            defeat: 'sound/defeat.mp3',
+            combo: 'sound/combo.mp3'
+        };
+        
+        this.sounds = {};
+        this.isInitialized = false;
+        
+        // プリロード用のAudioオブジェクトを作成
+        Object.entries(this.soundPaths).forEach(([key, path]) => {
+            this.sounds[key] = new Audio(path);
+            this.sounds[key].preload = 'auto';
+            this.sounds[key].volume = 0.4;
+        });
+    }
+
+    init() {
+        if (this.isInitialized) return;
+        
+        // iOS/Safariなどの自動再生制限解除のための無音再生アンロック
+        const unlock = () => {
+            Object.values(this.sounds).forEach(s => {
+                s.play().then(() => {
+                    s.pause();
+                    s.currentTime = 0;
+                }).catch(() => {});
+            });
+            this.isInitialized = true;
+            window.removeEventListener('click', unlock);
+            window.removeEventListener('touchstart', unlock);
+        };
+        window.addEventListener('click', unlock);
+        window.addEventListener('touchstart', unlock);
+    }
+
+    play(key, clone = true) {
+        const s = this.sounds[key];
+        if (!s) return;
+        
+        try {
+            if (clone) {
+                // 連続再生（多段ヒットなど）に対応するため、クローンして再生
+                const cloned = s.cloneNode();
+                cloned.volume = s.volume;
+                cloned.play().catch(e => console.warn("Audio playback failed (file might be missing):", e));
+            } else {
+                s.currentTime = 0;
+                s.play().catch(e => console.warn("Audio playback failed (file might be missing):", e));
+            }
+        } catch (e) {
+            console.error("Failed to play sound:", key, e);
+        }
+    }
+
+    // 各個別アクションメソッド
+    playCorrect() {
+        this.play('correct');
+    }
+
+    playWrong() {
+        this.play('wrong');
+    }
+
+    playHadoukenFire(type = 'blue') {
+        if (type === 'purple') {
+            this.play('fireEx');
+        } else if (type === 'red') {
+            this.play('fireShakunetsu');
+        } else {
+            this.play('fireNormal');
+        }
+    }
+
+    playHit(type = 'blue') {
+        if (type === 'purple' || type === 'red') {
+            this.play('hitCritical');
+        } else {
+            this.play('hitNormal');
+        }
+    }
+
+    playCombo(count) {
+        // combo.mp3がロードできない（ファイルがない）場合は、自動的にcorrect.mp3を鳴らすフォールバック処理
+        const comboAudio = this.sounds['combo'];
+        if (comboAudio) {
+            const onError = () => {
+                this.play('correct');
+                comboAudio.removeEventListener('error', onError);
+            };
+            comboAudio.addEventListener('error', onError);
+            
+            // プレイを試みる。ファイルがない場合は警告が出るが、onErrorが発火してcorrectが鳴る
+            comboAudio.play().then(() => {
+                comboAudio.pause();
+                comboAudio.currentTime = 0;
+                this.play('combo');
+            }).catch(() => {
+                this.play('correct');
+            });
+        } else {
+            this.play('correct');
+        }
+    }
+
+    playKOExplosion() {
+        this.play('ko');
+    }
+
+    playVictory() {
+        this.play('victory', false); // リザルトBGMは重ならなくてよいのでclone=false
+    }
+
+    playDefeat() {
+        this.play('defeat', false); // リザルトBGMは重ならなくてよいのでclone=false
+    }
+}
+
+const sound = new SF6SoundManager();
+
 // --- DOM Elements ---
 const screens = {
     start: document.getElementById('screen-start'),
@@ -181,6 +312,7 @@ function switchScreen(screenName) {
 
 // --- Game Logic ---
 function startGame() {
+    sound.init(); // 音声コンテキストの初期化
     const name = (dom.playerNameInput ? dom.playerNameInput.value.trim() : 'CHALLENGER') || 'CHALLENGER';
     localStorage.setItem('math_player_name', name);
     
@@ -532,6 +664,10 @@ function submitAnswer() {
             textVal = 'EX HADOUKEN!';
         }
 
+        // 成功音と波動拳発射音の再生
+        sound.playCorrect();
+        sound.playHadoukenFire(pwrType);
+
         // --- 波動拳バトル演出開始 ---
         // 1. スーパーアーツ風暗転/フラッシュ演出
         if (dom.battleStage && pwrType !== 'blue') {
@@ -575,6 +711,9 @@ function submitAnswer() {
                 void dom.battleStage.offsetWidth; // リフロー
                 dom.battleStage.classList.add(shakeClass);
             }
+            // 打撃音の再生
+            sound.playHit(pwrType);
+            
             // ライフ減少
             gameState.rivalLives = Math.max(0, gameState.rivalLives - damageAmount);
             updateRivalLivesDisplay();
@@ -618,6 +757,7 @@ function submitAnswer() {
             if (gameState.rivalLives <= 0) {
                 gameState.rivalKOs += 1;
                 if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.rivalKOs;
+                sound.playKOExplosion();
 
                 gameState.stage += 1;
                 gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); 
@@ -632,6 +772,7 @@ function submitAnswer() {
         }, cleanupDelay);
 
     } else {
+        sound.playWrong();
         if (activeBox) activeBox.classList.add('wrong');
         gameState.lives -= 1;
         gameState.consecutiveCorrects = 0; 
@@ -663,6 +804,9 @@ function updateComboDisplay() {
         dom.comboContainer.classList.remove('active');
         void dom.comboContainer.offsetWidth; 
         dom.comboContainer.classList.add('active');
+        
+        // コンボ音の再生
+        sound.playCombo(gameState.consecutiveCorrects);
     } else {
         dom.comboContainer.style.display = 'none';
     }
@@ -681,10 +825,12 @@ function endGame() {
             dom.resultStatus.textContent = "VICTORY";
             dom.resultStatus.style.color = "var(--neon-yellow)";
             dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 230, 0, 0.6), 3px 3px 0 #000";
+            sound.playVictory();
         } else {
             dom.resultStatus.textContent = "DEFEAT";
             dom.resultStatus.style.color = "var(--neon-pink)";
             dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 0, 119, 0.6), 3px 3px 0 #000";
+            sound.playDefeat();
         }
     }
     
@@ -809,6 +955,7 @@ function checkResumeData() {
 }
 
 function resumeGame() {
+    sound.init(); // 音声コンテキストの初期化
     const saveDataStr = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!saveDataStr) return;
     
