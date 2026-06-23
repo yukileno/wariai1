@@ -23,7 +23,7 @@
                 <div class="vs-card player-card">
                     <div class="card-side-label p1-color">1P</div>
                     <div class="player-input-wrap">
-                        <input type="text" id="player-name" placeholder="CHALLENGER NAME" autocomplete="off" maxlength="10" />
+                        <input type="text" id="player-name" placeholder="RYU" autocomplete="off" maxlength="10" />
                     </div>
                 </div>
                 
@@ -70,7 +70,7 @@
                 <!-- VS Center HUD (Round / STAGE / Score) -->
                 <div class="hud-center-sf6">
                     <div class="stage-label">STAGE <span id="game-stage">1</span></div>
-                    <div class="score-display-mini">🪙<span id="current-score">0</span></div>
+                    <div class="score-display-mini">🥊 <span id="current-score">0</span> K.O.</div>
                 </div>
                 
                 <!-- 2P Zangief Life Bar -->
@@ -89,6 +89,17 @@
                 </div>
             </div>
             
+            <!-- Battle Stage Area (At the top) -->
+            <div id="battle-stage" class="battle-stage-area">
+                <!-- Ryu & Zangief Battle Characters -->
+                <div id="ryu-char" class="battle-character ryu-idle"></div>
+                <div id="zangief-char" class="battle-character zangief-idle"></div>
+                <!-- Hadouken fireball -->
+                <div id="hadouken-ball" class="hadouken-fireball"></div>
+                <div id="hit-spark" class="hit-spark"></div>
+                <div id="hadouken-text" class="hadouken-text">HADOUKEN!</div>
+            </div>
+            
             <!-- Combo Counter Overlay -->
             <div id="combo-container" class="combo-counter" style="display: none;">
                 <span id="combo-count">0</span>
@@ -96,19 +107,22 @@
             </div>
             
             <div class="problem-board">
-                <!-- Question and Answer Box -->
-                <div class="question-container">
-                    <div id="question-text" class="question">□に入る数を答えてザンギエフをKOしろ！</div>
-                    
-                    <div class="answer-box-sf6" id="answer-box-normal">
-                        <span id="user-input" class="user-input-text"></span>
-                        <span class="cursor"></span>
+                <!-- Upper area: Question (left) + Diagram (right) -->
+                <div class="question-diagram-wrapper">
+                    <div class="question-container">
+                        <div id="question-text" class="question">□に入る数を答えてザンギエフをKOしろ！</div>
+                        
+                        <div class="answer-box-sf6" id="answer-box-normal">
+                            <span id="user-input" class="user-input-text"></span>
+                            <span class="cursor"></span>
+                        </div>
                     </div>
+                    
+                    <div id="diagram-container"></div>
                 </div>
                 
-                <!-- Canvas & Diagram Area (Spray Wall) -->
+                <!-- Canvas Area (Spray Wall) - Purely for calculation -->
                 <div id="calc-area">
-                    <div id="diagram-container"></div>
                     <canvas id="calc-canvas"></canvas>
                     <button id="btn-clear-canvas" class="btn-clear-canvas">RESET</button>
                 </div>
@@ -142,8 +156,8 @@
             <div class="ko-banner">K.O.</div>
             <h2 id="result-status" class="result-title">VICTORY</h2>
             <div class="final-score-sf6">
-                <span class="score-label">FINAL SCORE</span>
-                <span id="final-score-value" class="score-value">0</span>
+                <span class="score-label">ZANGIEF K.O. COUNT</span>
+                <span id="final-score-value" class="score-value">0 K.O.</span>
             </div>
             <p id="saving-status" class="status-msg">UPLOADING DATA...</p>
             <div class="menu-buttons-sf6">

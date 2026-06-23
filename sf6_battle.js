@@ -10,6 +10,7 @@ let gameState = {
     rivalLives: 5,
     rivalMaxLives: 5,
     stage: 1,
+    rivalKOs: 0, // ザンギエフを倒した回数
     consecutiveCorrects: 0,
     currentProblem: null,
     userInput: "",
@@ -45,7 +46,16 @@ const dom = {
     btnResume: document.getElementById('btn-resume'),
     diagramContainer: document.getElementById('diagram-container'),
     comboContainer: document.getElementById('combo-container'),
-    comboCount: document.getElementById('combo-count')
+    comboCount: document.getElementById('combo-count'),
+    
+    // バトル演出用
+    ryuChar: document.getElementById('ryu-char'),
+    zangiefChar: document.getElementById('zangief-char'),
+    hadoukenBall: document.getElementById('hadouken-ball'),
+    hitSpark: document.getElementById('hit-spark'),
+    hadoukenText: document.getElementById('hadouken-text'),
+    calcArea: document.getElementById('calc-area'),
+    battleStage: document.getElementById('battle-stage')
 };
 
 // --- Initialization ---
@@ -184,6 +194,7 @@ function startGame() {
         rivalLives: 5,
         rivalMaxLives: 5,
         stage: 1,
+        rivalKOs: 0,
         consecutiveCorrects: 0,
         currentProblem: null,
         userInput: "",
@@ -191,12 +202,35 @@ function startGame() {
     };
     
     if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = name;
-    if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
+    if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.rivalKOs;
     if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
     updateLivesDisplay();
     updateRivalLivesDisplay();
     
     if (dom.comboContainer) dom.comboContainer.style.display = 'none';
+    
+    // キャラクターと演出のリセット
+    if (dom.ryuChar) {
+        dom.ryuChar.className = 'battle-character ryu-idle';
+    }
+    if (dom.zangiefChar) {
+        dom.zangiefChar.className = 'battle-character zangief-idle';
+    }
+    if (dom.hadoukenBall) {
+        dom.hadoukenBall.className = 'hadouken-fireball';
+    }
+    if (dom.hitSpark) {
+        dom.hitSpark.className = 'hit-spark';
+    }
+    if (dom.hadoukenText) {
+        dom.hadoukenText.className = 'hadouken-text';
+    }
+    if (dom.calcArea) {
+        dom.calcArea.classList.remove('screen-shake');
+    }
+    if (dom.battleStage) {
+        dom.battleStage.classList.remove('screen-shake');
+    }
     
     nextProblem();
     switchScreen('game');
@@ -309,12 +343,12 @@ function resizeCanvas() {
         canvas.width = rect.width;
         canvas.height = rect.height;
         if(ctx) {
-            ctx.lineWidth = 5;
+            ctx.lineWidth = 2.5; // 細い線幅に変更して視認性を向上
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = '#ffe600'; 
-            ctx.shadowColor = '#ffe600';
-            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'transparent'; // 光彩ににじみが生じないように非表示
+            ctx.shadowBlur = 0; // 光彩を無効化して太さを一定に保つ
         }
     }
 }
@@ -469,11 +503,7 @@ function submitAnswer() {
         if (activeBox) activeBox.classList.add('correct');
         const scoreGain = (window.ProblemGenerator.mode === 'ratio') ? 10 : 20;
         gameState.score += scoreGain;
-        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
-        
-        // ザンギエフにダメージを与える
-        gameState.rivalLives -= 1;
-        updateRivalLivesDisplay();
+        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.rivalKOs;
         
         gameState.consecutiveCorrects += 1;
         updateComboDisplay();
@@ -486,26 +516,121 @@ function submitAnswer() {
             }
         }
         
-        // ザンギエフ撃破判定
-        if (gameState.rivalLives <= 0) {
-            gameState.stage += 1;
-            gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); 
-            gameState.rivalLives = gameState.rivalMaxLives;
-            
-            setTimeout(() => {
+        // --- ダメージ倍率（クリティカル）判定 ---
+        let dmg = 1;
+        let pwrType = 'blue'; // 'blue' (通常), 'purple' (強), 'red' (クリティカル)
+        let textVal = 'HADOUKEN!';
+        
+        const rand = Math.random();
+        if (rand < 0.12) { // 12%の確率で3ダメージ (灼熱波動拳)
+            dmg = 3;
+            pwrType = 'red';
+            textVal = 'SHAKUNETSU!';
+        } else if (rand < 0.32) { // 20%の確率で2ダメージ (EX波動拳)
+            dmg = 2;
+            pwrType = 'purple';
+            textVal = 'EX HADOUKEN!';
+        }
+
+        // --- 波動拳バトル演出開始 ---
+        // 1. スーパーアーツ風暗転/フラッシュ演出
+        if (dom.battleStage && pwrType !== 'blue') {
+            dom.battleStage.classList.add('stage-darken-' + pwrType);
+        }
+        // 2. リュウが波動拳のポーズをとる
+        if (dom.ryuChar) {
+            dom.ryuChar.className = 'battle-character ryu-hadouken';
+        }
+        // 3. 巨大テキストカットイン (文字とタイプ別クラスを設定)
+        if (dom.hadoukenText) {
+            dom.hadoukenText.textContent = textVal;
+            dom.hadoukenText.className = 'hadouken-text text-' + pwrType + ' hadouken-text-active';
+        }
+        // 4. 波動拳の弾を撃ち出す (タイプ別クラスを設定)
+        if (dom.hadoukenBall) {
+            dom.hadoukenBall.className = 'hadouken-fireball hadouken-' + pwrType + ' hadouken-active';
+        }
+
+        // 1ヒットごとの被弾アクション、スパーク、画面揺れ、ライフ減少を実行する共通処理
+        const triggerHit = (damageAmount) => {
+            // ザンギエフ被弾アクション
+            if (dom.zangiefChar) {
+                dom.zangiefChar.classList.remove('zangief-idle', 'zangief-damage');
+                void dom.zangiefChar.offsetWidth; // リフロー
+                dom.zangiefChar.classList.add('zangief-damage');
+            }
+            // ヒットスパーク
+            if (dom.hitSpark) {
+                dom.hitSpark.className = 'hit-spark spark-' + pwrType;
+                void dom.hitSpark.offsetWidth; // リフロー
+                dom.hitSpark.classList.add('spark-active');
+            }
+            // 画面揺れ (ダメージ量に応じて揺れ幅を変更)
+            if (dom.battleStage) {
+                let shakeClass = 'screen-shake';
+                if (pwrType === 'purple') shakeClass = 'screen-shake-medium';
+                else if (pwrType === 'red') shakeClass = 'screen-shake-heavy';
+                
+                dom.battleStage.classList.remove('screen-shake', 'screen-shake-medium', 'screen-shake-heavy');
+                void dom.battleStage.offsetWidth; // リフロー
+                dom.battleStage.classList.add(shakeClass);
+            }
+            // ライフ減少
+            gameState.rivalLives = Math.max(0, gameState.rivalLives - damageAmount);
+            updateRivalLivesDisplay();
+        };
+
+        // タイプ別多段ヒット処理 (EXは2ヒット、灼熱は3ヒット)
+        if (pwrType === 'blue') {
+            // 通常: 400ms後に1ヒット
+            setTimeout(() => triggerHit(1), 400);
+        } else if (pwrType === 'purple') {
+            // EX: 380ms後と520ms後にそれぞれ1ヒット (合計2ヒット・2ダメ)
+            setTimeout(() => triggerHit(1), 380);
+            setTimeout(() => triggerHit(1), 520);
+        } else if (pwrType === 'red') {
+            // 灼熱: 320ms後、470ms後、620ms後にそれぞれ1ヒット (合計3ヒット・3ダメ)
+            setTimeout(() => triggerHit(1), 320);
+            setTimeout(() => triggerHit(1), 470);
+            setTimeout(() => triggerHit(1), 620);
+        }
+
+        // クリーンアップ遅延時間 (演出タイプに応じて調整)
+        let cleanupDelay = 1000;
+        if (pwrType === 'purple') cleanupDelay = 1100;
+        else if (pwrType === 'red') cleanupDelay = 1250;
+
+        // クリーンアップ処理 (演出が完全に終わって元の状態に戻す)
+        setTimeout(() => {
+            // キャラクターや演出クラスのリセット
+            if (dom.ryuChar) dom.ryuChar.className = 'battle-character ryu-idle';
+            if (dom.zangiefChar) dom.zangiefChar.className = 'battle-character zangief-idle';
+            if (dom.hadoukenBall) dom.hadoukenBall.className = 'hadouken-fireball';
+            if (dom.hitSpark) dom.hitSpark.className = 'hit-spark';
+            if (dom.hadoukenText) {
+                dom.hadoukenText.className = 'hadouken-text';
+                dom.hadoukenText.textContent = 'HADOUKEN!';
+            }
+            if (dom.battleStage) dom.battleStage.className = 'battle-stage-area';
+            if (activeBox) activeBox.classList.remove('correct');
+
+            // ザンギエフ撃破判定と次の問題への移行
+            if (gameState.rivalLives <= 0) {
+                gameState.rivalKOs += 1;
+                if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.rivalKOs;
+
+                gameState.stage += 1;
+                gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); 
+                gameState.rivalLives = gameState.rivalMaxLives;
+                
                 if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
                 updateRivalLivesDisplay();
-                gameState.isTransitioning = false;
-                nextProblem();
-                if (activeBox) activeBox.classList.remove('correct');
-            }, 500);
-        } else {
-            setTimeout(() => {
-                gameState.isTransitioning = false;
-                nextProblem();
-                if (activeBox) activeBox.classList.remove('correct');
-            }, 250);
-        }
+            }
+            
+            gameState.isTransitioning = false;
+            nextProblem();
+        }, cleanupDelay);
+
     } else {
         if (activeBox) activeBox.classList.add('wrong');
         gameState.lives -= 1;
@@ -549,10 +674,10 @@ function endGame() {
         dom.btnResume.style.display = 'none';
     }
     
-    if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.score;
+    if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.rivalKOs + " K.O.";
     
     if (dom.resultStatus) {
-        if (gameState.stage >= 2 || gameState.score >= 50) {
+        if (gameState.rivalKOs >= 1) {
             dom.resultStatus.textContent = "VICTORY";
             dom.resultStatus.style.color = "var(--neon-yellow)";
             dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 230, 0, 0.6), 3px 3px 0 #000";
@@ -583,7 +708,7 @@ async function submitScoreToGAS() {
                 action: 'submit',
                 sheetName: APP_SHEET_NAME,
                 name: gameState.playerName,
-                score: gameState.score,
+                score: gameState.rivalKOs,
                 topic: window.ProblemGenerator.topicName
             }),
             headers: {
@@ -629,7 +754,7 @@ async function showRanking() {
                     item.innerHTML = `
                         <span class="${rankClass}">${idx + 1}位</span>
                         <span>${r.name}</span>
-                        <span style="color:var(--neon-cyan); font-weight:bold;">${r.score}</span>
+                        <span style="color:var(--neon-cyan); font-weight:bold;">${r.score} K.O.</span>
                     `;
                     dom.rankingList.appendChild(item);
                 });
@@ -655,6 +780,7 @@ function saveGameProgress() {
             rivalLives: gameState.rivalLives,
             rivalMaxLives: gameState.rivalMaxLives,
             stage: gameState.stage,
+            rivalKOs: gameState.rivalKOs,
             consecutiveCorrects: gameState.consecutiveCorrects
         };
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(saveObj));
@@ -701,6 +827,7 @@ function resumeGame() {
             rivalLives: saveData.rivalLives !== undefined ? saveData.rivalLives : 5,
             rivalMaxLives: saveData.rivalMaxLives !== undefined ? saveData.rivalMaxLives : 5,
             stage: saveData.stage || 1,
+            rivalKOs: saveData.rivalKOs !== undefined ? saveData.rivalKOs : 0,
             consecutiveCorrects: saveData.consecutiveCorrects || 0,
             currentProblem: null,
             userInput: "",
@@ -708,11 +835,34 @@ function resumeGame() {
         };
         
         if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = gameState.playerName;
-        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
+        if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.rivalKOs;
         if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
         updateLivesDisplay();
         updateRivalLivesDisplay();
         updateComboDisplay();
+        
+        // キャラクターと演出のリセット
+        if (dom.ryuChar) {
+            dom.ryuChar.className = 'battle-character ryu-idle';
+        }
+        if (dom.zangiefChar) {
+            dom.zangiefChar.className = 'battle-character zangief-idle';
+        }
+        if (dom.hadoukenBall) {
+            dom.hadoukenBall.className = 'hadouken-fireball';
+        }
+        if (dom.hitSpark) {
+            dom.hitSpark.className = 'hit-spark';
+        }
+        if (dom.hadoukenText) {
+            dom.hadoukenText.className = 'hadouken-text';
+        }
+        if (dom.calcArea) {
+            dom.calcArea.classList.remove('screen-shake');
+        }
+        if (dom.battleStage) {
+            dom.battleStage.classList.remove('screen-shake');
+        }
         
         nextProblem();
         switchScreen('game');

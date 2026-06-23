@@ -548,15 +548,26 @@ button:active {
     min-height: 0;
 }
 
+.question-diagram-wrapper {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: stretch;
+    min-height: 120px;
+}
+
 .question-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
+    justify-content: center;
+    flex: 1;
     background: rgba(0, 0, 0, 0.55);
     border: 2px solid rgba(255, 255, 255, 0.1);
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 8px 10px;
+    margin-bottom: 0;
     position: relative;
     overflow: hidden;
 }
@@ -666,13 +677,16 @@ button:active {
 }
 
 #diagram-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
+    flex: 1.25;
+    position: relative;
+    background: rgba(10, 10, 15, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
+    overflow: hidden;
 }
 
 #calc-canvas {
@@ -1022,19 +1036,20 @@ button:active {
     #screen-game.active {
         display: grid;
         grid-template-columns: minmax(0, 1fr) clamp(250px, 30vw, 320px);
-        grid-template-rows: auto 1fr;
-        gap: 1.5vw;
+        grid-template-rows: auto auto 1fr;
+        gap: 1.2vw;
         align-items: stretch;
         width: 100%;
         height: 100%;
     }
 
     .game-header { grid-column: 1 / -1; align-self: start; margin-bottom: 0; }
-    .problem-board { grid-column: 1 / 2; grid-row: 2 / 3; width: 100%; height: 100%; justify-content: space-between; }
+    .battle-stage-area { grid-column: 1 / -1; height: 110px; margin-bottom: 0; }
+    .problem-board { grid-column: 1 / 2; grid-row: 3 / 4; width: 100%; height: 100%; justify-content: space-between; }
     
     .numpad-sf6 { 
         grid-column: 2 / 3; 
-        grid-row: 2 / 3; 
+        grid-row: 3 / 4; 
         margin-top: 0; 
         gap: 1.2vh; 
         height: 100%; 
@@ -1057,4 +1072,327 @@ button:active {
     .question { font-size: clamp(1rem, 2vw, 1.4rem); }
     .answer-box-sf6 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); height: clamp(38px, 6vh, 52px); }
     #calc-area { margin-bottom: 0; }
+}
+
+/* --- BATTLE STAGE AREA --- */
+.battle-stage-area {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    margin-bottom: 8px;
+    background: rgba(18, 18, 24, 0.45);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 -5px 15px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    transform: skewX(-5deg); /* SF6風の斜めカット */
+}
+
+/* --- BATTLE CHARACTER ANIMATIONS --- */
+.battle-character {
+    position: absolute;
+    bottom: 0px;
+    width: 90px;
+    height: 90px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    z-index: 2;
+    pointer-events: none;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+    opacity: 1; /* 重なり問題が解決したため透過を解除 */
+}
+
+#ryu-char {
+    left: 10px;
+}
+
+#zangief-char {
+    right: 10px;
+}
+
+.ryu-idle {
+    background-image: url('css/ryu_idle.png');
+}
+
+.ryu-hadouken {
+    background-image: url('css/ryu_hadouken.png');
+    transform: scale(1.15);
+    opacity: 1;
+}
+
+.zangief-idle {
+    background-image: url('css/zangief_idle.png');
+    transform: scaleX(-1); /* 左向きにする */
+}
+
+.zangief-damage {
+    background-image: url('css/zangief_damage.png');
+    transform: scaleX(-1) translateX(-20px) rotate(-10deg); /* ダメージで後ろにのけぞる */
+    opacity: 1;
+    animation: zangiefFlash 0.1s infinite alternate;
+}
+
+@keyframes zangiefFlash {
+    from { filter: drop-shadow(0 0 20px #ff0044) brightness(1.8) saturate(1.5); }
+    to { filter: drop-shadow(0 0 5px #ff0044) brightness(1) saturate(1); }
+}
+
+/* 波動拳の弾 */
+.hadouken-fireball {
+    --hadouken-color: #00f3ff;
+    --hadouken-color-outer: rgba(0, 243, 255, 0);
+    --hadouken-glow: #00f3ff;
+    --hadouken-size-scale: 1;
+
+    position: absolute;
+    bottom: 30px; /* キャラクターの手の高さ */
+    left: 70px;
+    width: 40px;
+    height: 40px;
+    background-image: radial-gradient(circle, #ffffff 10%, var(--hadouken-color) 50%, var(--hadouken-color-outer) 70%);
+    box-shadow: 0 0 calc(15px * var(--hadouken-size-scale)) var(--hadouken-glow), 0 0 calc(30px * var(--hadouken-size-scale)) var(--hadouken-glow);
+    border-radius: 50%;
+    z-index: 3;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.6);
+}
+
+/* 波動拳タイプ別の変数上書き */
+.hadouken-blue {
+    --hadouken-color: #00f3ff;
+    --hadouken-color-outer: rgba(0, 243, 255, 0);
+    --hadouken-glow: #00f3ff;
+    --hadouken-size-scale: 1;
+}
+
+.hadouken-purple {
+    --hadouken-color: #d300ff;
+    --hadouken-color-outer: rgba(211, 0, 255, 0);
+    --hadouken-glow: #d300ff;
+    --hadouken-size-scale: 1.5;
+}
+
+.hadouken-red {
+    --hadouken-color: #ff2200;
+    --hadouken-color-outer: rgba(255, 34, 0, 0);
+    --hadouken-glow: #ff2200;
+    --hadouken-size-scale: 2.2;
+}
+
+/* 波動拳のアニメーション */
+.hadouken-active.hadouken-blue {
+    animation: travelHadoukenBlue 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+.hadouken-active.hadouken-purple {
+    animation: travelHadoukenPurple 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+.hadouken-active.hadouken-red {
+    animation: travelHadoukenRed 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes travelHadoukenBlue {
+    0% { left: 70px; opacity: 0; transform: scale(0.5) rotate(0deg); }
+    15% { opacity: 1; transform: scale(1.0) rotate(90deg); }
+    85% { opacity: 1; transform: scale(0.9) rotate(270deg); }
+    100% { left: calc(100% - 100px); opacity: 0; transform: scale(0.6) rotate(360deg); }
+}
+
+@keyframes travelHadoukenPurple {
+    0% { left: 70px; opacity: 0; transform: scale(0.7) rotate(0deg); }
+    15% { opacity: 1; transform: scale(1.6) rotate(90deg); }
+    85% { opacity: 1; transform: scale(1.4) rotate(270deg); }
+    100% { left: calc(100% - 100px); opacity: 0; transform: scale(0.8) rotate(360deg); }
+}
+
+@keyframes travelHadoukenRed {
+    0% { left: 70px; opacity: 0; transform: scale(0.9) rotate(0deg); }
+    15% { opacity: 1; transform: scale(2.5) rotate(90deg); }
+    85% { opacity: 1; transform: scale(2.0) rotate(270deg); }
+    100% { left: calc(100% - 100px); opacity: 0; transform: scale(1.1) rotate(360deg); }
+}
+
+/* ヒットスパーク */
+.hit-spark {
+    position: absolute;
+    right: 60px;
+    bottom: 35px;
+    width: 60px;
+    height: 60px;
+    z-index: 4;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+}
+
+.hit-spark.spark-blue {
+    background: radial-gradient(circle, #ffffff 10%, #00f3ff 40%, rgba(0, 243, 255, 0) 70%);
+}
+.hit-spark.spark-purple {
+    background: radial-gradient(circle, #ffffff 15%, #e600ff 50%, rgba(230, 0, 255, 0) 70%);
+}
+.hit-spark.spark-red {
+    background: radial-gradient(circle, #ffffff 20%, #ff1100 50%, #ffcc00 70%, rgba(255, 17, 0, 0) 90%);
+}
+
+.spark-active.spark-blue {
+    animation: sparkPopBlue 0.25s ease-out forwards;
+}
+.spark-active.spark-purple {
+    animation: sparkPopPurple 0.25s ease-out forwards;
+}
+.spark-active.spark-red {
+    animation: sparkPopRed 0.3s ease-out forwards;
+}
+
+@keyframes sparkPopBlue {
+    0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+    40% { opacity: 1; transform: scale(2.0) rotate(45deg); filter: brightness(2); }
+    100% { opacity: 0; transform: scale(1.4) rotate(90deg); }
+}
+@keyframes sparkPopPurple {
+    0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    40% { opacity: 1; transform: scale(2.8) rotate(45deg); filter: brightness(2.2); }
+    100% { opacity: 0; transform: scale(1.8) rotate(90deg); }
+}
+@keyframes sparkPopRed {
+    0% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+    40% { opacity: 1; transform: scale(3.8) rotate(45deg); filter: brightness(2.5); }
+    100% { opacity: 0; transform: scale(2.2) rotate(120deg); }
+}
+
+/* 波動拳テキスト */
+.hadouken-text {
+    position: absolute;
+    left: 30px;
+    bottom: 85px;
+    font-family: var(--font-street);
+    font-size: 1.8rem;
+    transform: rotate(-10deg) scale(0.5);
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.15s ease-in-out;
+}
+
+.hadouken-text.text-blue {
+    color: var(--neon-cyan);
+    text-shadow: 2px 2px 0px #000, 0 0 10px var(--neon-cyan);
+}
+.hadouken-text.text-purple {
+    color: #e600ff;
+    text-shadow: 2px 2px 0px #000, 0 0 15px #e600ff;
+}
+.hadouken-text.text-red {
+    color: #ff1100;
+    text-shadow: 2px 2px 0px #000, 0 0 25px #ff1100, 0 0 45px #ffcc00;
+}
+
+/* 通常のテキストポップ */
+.hadouken-text-active.text-blue {
+    animation: textPopBlue 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* EX巨大カットイン (画面中央にドカンと表示) */
+.hadouken-text-active.text-purple {
+    left: 50% !important;
+    top: 40% !important;
+    bottom: auto !important;
+    font-size: 2.8rem;
+    z-index: 20;
+    transform: translate(-50%, -50%) rotate(-5deg) scale(1);
+    animation: textPopPurple 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
+}
+
+/* 灼熱超巨大カットイン (さらに大きく画面中央に表示) */
+.hadouken-text-active.text-red {
+    left: 50% !important;
+    top: 35% !important;
+    bottom: auto !important;
+    font-size: 3.6rem;
+    z-index: 20;
+    transform: translate(-50%, -50%) rotate(8deg) scale(1);
+    animation: textPopRed 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.6) forwards;
+}
+
+@keyframes textPopBlue {
+    0% { opacity: 0; transform: rotate(-10deg) scale(0.5); }
+    30% { opacity: 1; transform: rotate(-15deg) scale(1.3); }
+    80% { opacity: 1; transform: rotate(-15deg) scale(1); }
+    100% { opacity: 0; transform: rotate(-15deg) scale(0.8); }
+}
+
+@keyframes textPopPurple {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(15deg) scale(0.2); filter: blur(5px); }
+    20% { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scale(1.4); filter: blur(0); }
+    80% { opacity: 1; transform: translate(-50%, -50%) rotate(-5deg) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(0.8); }
+}
+
+@keyframes textPopRed {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-30deg) scale(0.1); filter: blur(10px) brightness(3); }
+    25% { opacity: 1; transform: translate(-50%, -50%) rotate(8deg) scale(1.6); filter: blur(0) brightness(1.5); }
+    75% { opacity: 1; transform: translate(-50%, -50%) rotate(8deg) scale(1.4); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(15deg) scale(0.5); }
+}
+
+/* 各種スクリーンシェイク */
+.screen-shake {
+    animation: shakeArea 0.15s ease-in-out 2;
+}
+.screen-shake-medium {
+    animation: shakeAreaMedium 0.18s ease-in-out 2;
+}
+.screen-shake-heavy {
+    animation: shakeAreaHeavy 0.22s ease-in-out 3;
+}
+
+@keyframes shakeArea {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-4px, 4px); }
+    50% { transform: translate(4px, -4px); }
+    75% { transform: translate(-4px, -4px); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes shakeAreaMedium {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-8px, 6px); }
+    50% { transform: translate(8px, -6px); }
+    75% { transform: translate(-6px, -6px); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes shakeAreaHeavy {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-12px, 10px) rotate(-0.5deg); }
+    40% { transform: translate(12px, -10px) rotate(0.5deg); }
+    60% { transform: translate(-10px, -10px) rotate(-0.5deg); }
+    80% { transform: translate(10px, 8px) rotate(0.5deg); }
+    100% { transform: translate(0, 0); }
+}
+
+/* スーパーアーツ風背景フラッシュ・暗転 */
+.stage-darken-purple {
+    animation: saDarkenPurple 0.5s ease-out forwards;
+}
+.stage-darken-red {
+    animation: saDarkenRed 0.6s ease-out forwards;
+}
+
+@keyframes saDarkenPurple {
+    0% { background: rgba(18, 18, 24, 0.45); }
+    15% { background: #000000; filter: brightness(2) contrast(1.5); }
+    35% { background: #20002d; }
+    80% { background: #0e0014; }
+    100% { background: rgba(18, 18, 24, 0.45); }
+}
+
+@keyframes saDarkenRed {
+    0% { background: rgba(18, 18, 24, 0.45); }
+    12% { background: #000000; filter: brightness(3.0); }
+    25% { background: #ff0000; }
+    40% { background: #380000; }
+    85% { background: #120000; }
+    100% { background: rgba(18, 18, 24, 0.45); }
 }
