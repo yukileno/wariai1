@@ -1,6 +1,6 @@
 // --- Configuration ---
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyno-Otdjr5xQnC2t3ZWZhNJAJPA3WeJLM6K52cKzJ2XuFjzL1aBHydSr29rN2PsVR5mQ/exec";
-const APP_SHEET_NAME = "shousuuwarizan"; // 各アプリごとに記録するシートを分けます
+const APP_SHEET_NAME = "wariai"; // 割合・比率用
 
 let gameState = {
     playerName: "",
@@ -8,10 +8,7 @@ let gameState = {
     lives: 3,
     consecutiveCorrects: 0,
     currentProblem: null,
-    userInput: "",      // わりきれるモード用
-    userInputQ: "",     // あまりありモード（商）用
-    userInputR: "",     // あまりありモード（あまり）用
-    activeField: "q",   // "q" (商) または "r" (あまり)
+    userInput: "",
     isTransitioning: false
 };
 
@@ -32,26 +29,20 @@ const dom = {
     
     // 回答枠関連
     answerBoxNormal: document.getElementById('answer-box-normal'),
-    answerBoxRemain: document.getElementById('answer-box-remain'),
     userInputBox: document.getElementById('user-input'),
-    userInputQ: document.getElementById('user-input-q'),
-    userInputR: document.getElementById('user-input-r'),
-    slotQ: document.getElementById('slot-q'),
-    slotR: document.getElementById('slot-r'),
-    qCursor: document.querySelector('.q-cursor'),
-    rCursor: document.querySelector('.r-cursor'),
     
     finalScoreValue: document.getElementById('final-score-value'),
     savingStatus: document.getElementById('saving-status'),
     rankingList: document.getElementById('ranking-list'),
-    btnResume: document.getElementById('btn-resume')
+    btnResume: document.getElementById('btn-resume'),
+    diagramContainer: document.getElementById('diagram-container')
 };
 
 // --- Initialization ---
 function init() {
     // Load config from ProblemGenerator
     dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
-    document.title = window.ProblemGenerator.topicName; // Set tab title to topic name
+    document.title = window.ProblemGenerator.topicName;
     
     // Load saved name
     const savedName = localStorage.getItem('math_player_name');
@@ -63,6 +54,7 @@ function init() {
         remain: document.getElementById('btn-mode-remain'),
         approx: document.getElementById('btn-mode-approx')
     };
+
     const updateMode = (selectedMode) => {
         window.ProblemGenerator.mode = selectedMode;
         
@@ -71,24 +63,25 @@ function init() {
             if (btn) btn.classList.remove('active');
         });
         
-        if (selectedMode === 'remain') {
-            window.ProblemGenerator.topicName = "小数の割り算（あまりあり）";
+        if (selectedMode === 'compare') {
+            window.ProblemGenerator.topicName = "比べる量を求める";
             if (modeBtns.remain) modeBtns.remain.classList.add('active');
-        } else if (selectedMode === 'approx') {
-            window.ProblemGenerator.topicName = "小数の割り算（概数）";
+        } else if (selectedMode === 'base') {
+            window.ProblemGenerator.topicName = "もとにする量を求める";
             if (modeBtns.approx) modeBtns.approx.classList.add('active');
         } else {
-            window.ProblemGenerator.topicName = "小数の割り算";
+            window.ProblemGenerator.topicName = "割合を求める";
             if (modeBtns.normal) modeBtns.normal.classList.add('active');
         }
         dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
         document.title = window.ProblemGenerator.topicName;
     };
+
     if (modeBtns.normal && modeBtns.remain) {
-        modeBtns.normal.addEventListener('click', () => updateMode('normal'));
-        modeBtns.remain.addEventListener('click', () => updateMode('remain'));
+        modeBtns.normal.addEventListener('click', () => updateMode('ratio'));
+        modeBtns.remain.addEventListener('click', () => updateMode('compare'));
         if (modeBtns.approx) {
-            modeBtns.approx.addEventListener('click', () => updateMode('approx'));
+            modeBtns.approx.addEventListener('click', () => updateMode('base'));
         }
     }
     
@@ -115,16 +108,12 @@ function init() {
     document.querySelector('.btn-delete').addEventListener('click', backspace);
     document.querySelector('.btn-enter').addEventListener('click', submitAnswer);
     
-    // Focus Toggle Button for remain mode
+    // Disable "あまり" button as it's not needed for ratio mode
     const btnFocusToggle = document.querySelector('.btn-focus-toggle');
     if (btnFocusToggle) {
-        btnFocusToggle.addEventListener('click', toggleFocus);
-    }
-    
-    // Slot Click Handlers
-    if (dom.slotQ && dom.slotR) {
-        dom.slotQ.addEventListener('click', () => setFocus('q'));
-        dom.slotR.addEventListener('click', () => setFocus('r'));
+        btnFocusToggle.style.opacity = '0.5';
+        btnFocusToggle.style.pointerEvents = 'none';
+        btnFocusToggle.textContent = 'ー';
     }
 
     // Keyboard Input Handler (For Chromebook / PC)
@@ -132,9 +121,6 @@ function init() {
         if(screens.game.classList.contains('active')) {
             if(/[0-9\.]/.test(e.key)) {
                 typeChar(e.key);
-            } else if(e.key === 'Tab' || /^[arp\*]$/i.test(e.key)) {
-                e.preventDefault();
-                toggleFocus();
             } else if(e.key === 'Backspace') {
                 backspace();
             } else if(e.key === 'Enter') {
@@ -161,7 +147,7 @@ function startGame() {
     localStorage.setItem('math_player_name', name);
     
     // 新規スタート時はセーブデータを消去
-    localStorage.removeItem('shousuuwarizan_resume_save');
+    localStorage.removeItem('wariai_resume_save');
     
     gameState = {
         playerName: name,
@@ -170,9 +156,6 @@ function startGame() {
         consecutiveCorrects: 0,
         currentProblem: null,
         userInput: "",
-        userInputQ: "",
-        userInputR: "",
-        activeField: "q",
         isTransitioning: false
     };
     
@@ -198,46 +181,12 @@ function nextProblem() {
         dom.questionText.textContent = gameState.currentProblem.questionText;
     }
     
-    // Switch input UI based on mode
-    if (window.ProblemGenerator.mode === 'remain') {
-        dom.answerBoxNormal.style.display = 'none';
-        dom.answerBoxRemain.style.display = 'flex';
-    } else {
-        dom.answerBoxNormal.style.display = 'flex';
-        dom.answerBoxRemain.style.display = 'none';
-    }
-    
     // Clear drawing canvas for the new problem
     clearCanvas();
 
     gameState.userInput = "";
-    gameState.userInputQ = "";
-    gameState.userInputR = "";
-    setFocus('q');
     updateInputDisplay();
-}
-
-// --- Focus Management ---
-function setFocus(field) {
-    if (gameState.isTransitioning) return;
-    gameState.activeField = field;
-    if (field === 'q') {
-        dom.slotQ.classList.add('active');
-        dom.slotR.classList.remove('active');
-        dom.qCursor.style.display = 'inline-block';
-        dom.rCursor.style.display = 'none';
-    } else {
-        dom.slotR.classList.add('active');
-        dom.slotQ.classList.remove('active');
-        dom.rCursor.style.display = 'inline-block';
-        dom.qCursor.style.display = 'none';
-    }
-}
-
-function toggleFocus() {
-    if (window.ProblemGenerator.mode !== 'remain' || gameState.isTransitioning) return;
-    const nextField = (gameState.activeField === 'q') ? 'r' : 'q';
-    setFocus(nextField);
+    renderDiagram();
 }
 
 // --- Canvas Drawing Logic ---
@@ -324,69 +273,138 @@ function clearCanvas() {
 function typeChar(char) {
     if(gameState.isTransitioning) return;
     
-    if (window.ProblemGenerator.mode === 'remain') {
-        // あまりありモード（商とあまりの振り分け）
-        if (gameState.activeField === 'q') {
-            if(char === '.' && gameState.userInputQ.includes('.')) return;
-            gameState.userInputQ += char;
-        } else {
-            if(char === '.' && gameState.userInputR.includes('.')) return;
-            gameState.userInputR += char;
-        }
-    } else {
-        // わりきれるモード
-        if(char === '.' && gameState.userInput.includes('.')) return;
-        gameState.userInput += char;
-    }
+    if(char === '.' && gameState.userInput.includes('.')) return;
+    // 小数第二位までに制限（必要以上に長く打たせない）
+    if(gameState.userInput.replace('.', '').length >= 5) return;
+    
+    gameState.userInput += char;
     updateInputDisplay();
 }
 
 function backspace() {
     if(gameState.isTransitioning) return;
-    
-    if (window.ProblemGenerator.mode === 'remain') {
-        if (gameState.activeField === 'q') {
-            gameState.userInputQ = gameState.userInputQ.slice(0, -1);
-        } else {
-            gameState.userInputR = gameState.userInputR.slice(0, -1);
-        }
-    } else {
-        gameState.userInput = gameState.userInput.slice(0, -1);
-    }
+    gameState.userInput = gameState.userInput.slice(0, -1);
     updateInputDisplay();
 }
 
 function updateInputDisplay() {
-    if (window.ProblemGenerator.mode === 'remain') {
-        dom.userInputQ.textContent = gameState.userInputQ;
-        dom.userInputR.textContent = gameState.userInputR;
-    } else {
-        dom.userInputBox.textContent = gameState.userInput;
+    dom.userInputBox.textContent = gameState.userInput;
+    
+    // 関係図の入力テキストも更新
+    const svgInputText = document.getElementById('svg-input-text');
+    if (svgInputText) {
+        const target = gameState.currentProblem?.params?.target;
+        if (target === 'ratio') {
+            svgInputText.textContent = (gameState.userInput || "?") + "倍";
+        } else {
+            svgInputText.textContent = (gameState.userInput || "?") + "m";
+        }
     }
+}
+
+// --- SVG Diagram Rendering ---
+function renderDiagram() {
+    if (!gameState.currentProblem || !gameState.currentProblem.params || !dom.diagramContainer) return;
+    const params = gameState.currentProblem.params;
+    const target = params.target; // "ratio" | "compare" | "base"
+
+    let labelA = params.colorA; // 左の箱 (白など)
+    let labelB = params.colorB; // 右の箱 (赤など)
+    let unit = params.unit; // "m"
+
+    let valAStr = params.valueA + unit;
+    let valBStr = params.valueB + unit;
+    let ratioStr = params.ratio + "倍";
+
+    let valueAClass = "";
+    let valueBClass = "";
+    let ratioClass = "";
+
+    let textA = valAStr;
+    let textB = valBStr;
+    let textRatio = ratioStr;
+
+    if (target === "base") {
+        textA = "";
+        valueAClass = "target-field";
+    } else if (target === "compare") {
+        textB = "";
+        valueBClass = "target-field";
+    } else if (target === "ratio") {
+        textRatio = "";
+        ratioClass = "target-field";
+    }
+
+    // SVGの構造定義（カクカクのマイクラ看板風）
+    const svgHTML = `
+    <svg class="ratio-diagram-svg" viewBox="0 0 440 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- もとにする量（左の四角） -->
+        <g transform="translate(40, 60)">
+            <rect class="diagram-box" x="0" y="0" width="110" height="60" />
+            <text class="diagram-text-label" x="55" y="34">${labelA}</text>
+        </g>
+        
+        <!-- 比べる量（右の四角） -->
+        <g transform="translate(290, 60)">
+            <rect class="diagram-box" x="0" y="0" width="110" height="60" />
+            <text class="diagram-text-label" x="55" y="34">${labelB}</text>
+        </g>
+
+        <!-- もとにする量の下の数値 -->
+        <g transform="translate(40, 130)">
+            ${target === "base" ? `
+                <rect class="diagram-input-box ${valueAClass}" x="5" y="5" width="100" height="40" />
+                <text id="svg-input-text" class="diagram-input-text" x="55" y="30">${gameState.userInput || "?"}m</text>
+            ` : `
+                <text class="diagram-text-value" x="55" y="28">${textA}</text>
+            `}
+        </g>
+
+        <!-- 比べる量の下の数値 -->
+        <g transform="translate(290, 130)">
+            ${target === "compare" ? `
+                <rect class="diagram-input-box ${valueBClass}" x="5" y="5" width="100" height="40" />
+                <text id="svg-input-text" class="diagram-input-text" x="55" y="30">${gameState.userInput || "?"}m</text>
+            ` : `
+                <text class="diagram-text-value" x="55" y="28">${textB}</text>
+            `}
+        </g>
+
+        <!-- 右向きの矢印 -->
+        <g>
+            <!-- 矢印の線 -->
+            <path class="diagram-arrow-line" d="M 160,90 H 270" />
+            <!-- 矢印の頭 -->
+            <polygon class="diagram-arrow-head" points="262,80 276,90 262,100" />
+        </g>
+
+        <!-- 割合（矢印の上） -->
+        <g transform="translate(170, 20)">
+            ${target === "ratio" ? `
+                <rect class="diagram-input-box ${ratioClass}" x="5" y="5" width="90" height="40" />
+                <text id="svg-input-text" class="diagram-input-text" x="50" y="30">${gameState.userInput || "?"}倍</text>
+            ` : `
+                <text class="diagram-text-value" style="fill: #3d2c18;" x="50" y="28">${textRatio}</text>
+            `}
+        </g>
+    </svg>
+    `;
+
+    dom.diagramContainer.innerHTML = svgHTML;
 }
 
 function submitAnswer() {
     if (gameState.isTransitioning) return;
+    if (!gameState.userInput) return;
     
     let isCorrect = false;
-    const activeBox = (window.ProblemGenerator.mode === 'remain') ? dom.answerBoxRemain : dom.answerBoxNormal;
+    const activeBox = dom.answerBoxNormal;
     
-    if (window.ProblemGenerator.mode === 'remain') {
-        if (!gameState.userInputQ || !gameState.userInputR) return; // 両方入力されていない場合は無視
-        
-        // 答えは「商ああまり」の形式（例: 3あ0.2）
-        const ansParts = gameState.currentProblem.answerText.split('あ');
-        if (ansParts.length === 2) {
-            const expectedQ = ansParts[0];
-            const expectedR = ansParts[1];
-            const matchQ = (gameState.userInputQ === expectedQ) || (Number(gameState.userInputQ) === Number(expectedQ));
-            const matchR = (gameState.userInputR === expectedR) || (Number(gameState.userInputR) === Number(expectedR));
-            isCorrect = (matchQ && matchR);
-        }
-    } else {
-        if (!gameState.userInput) return;
-        isCorrect = (gameState.userInput === gameState.currentProblem.answerText) || (Number(gameState.userInput) === Number(gameState.currentProblem.answerText));
-    }
+    const inputVal = Number(gameState.userInput);
+    const expectedVal = Number(gameState.currentProblem.answerText);
+    
+    // 浮動小数点数の一致判定（誤差を許容）
+    isCorrect = Math.abs(inputVal - expectedVal) < 1e-9;
     
     activeBox.classList.remove('correct', 'wrong');
     // Force reflow
@@ -395,8 +413,8 @@ function submitAnswer() {
     if(isCorrect) {
         gameState.isTransitioning = true;
         activeBox.classList.add('correct');
-        const scoreGain = (window.ProblemGenerator.mode === 'normal') ? 10 : 20; // 10 points for normal, 20 for remain/approx
-        gameState.score += scoreGain; // 10 or 20 points per correct answer
+        const scoreGain = (window.ProblemGenerator.mode === 'ratio') ? 10 : 20;
+        gameState.score += scoreGain;
         dom.currentScoreDisplay.textContent = gameState.score;
         
         // 5問連続正解でライフ全回復
@@ -426,13 +444,7 @@ function submitAnswer() {
                 endGame();
             }, 300);
         } else {
-            if (window.ProblemGenerator.mode === 'remain') {
-                gameState.userInputQ = "";
-                gameState.userInputR = "";
-                setFocus('q');
-            } else {
-                gameState.userInput = "";
-            }
+            gameState.userInput = "";
             updateInputDisplay();
             setTimeout(() => {
                 activeBox.classList.remove('wrong');
@@ -442,7 +454,7 @@ function submitAnswer() {
 }
 
 function endGame() {
-    localStorage.removeItem('shousuuwarizan_resume_save');
+    localStorage.removeItem('wariai_resume_save');
     if (dom.btnResume) {
         dom.btnResume.style.display = 'none';
     }
@@ -481,7 +493,6 @@ async function submitScoreToGAS() {
     }
 }
 
-
 async function showRanking() {
     switchScreen('ranking');
     dom.rankingList.innerHTML = '<div class="loading-spinner"></div>';
@@ -497,7 +508,6 @@ async function showRanking() {
         
         dom.rankingList.innerHTML = '';
         if(data.ranking && data.ranking.length > 0) {
-            // 0点の人はランキングに載せない
             const filteredRanking = data.ranking.filter(r => parseInt(r.score, 10) > 0);
             
             if (filteredRanking.length > 0) {
@@ -543,19 +553,19 @@ function saveGameProgress() {
             consecutiveCorrects: gameState.consecutiveCorrects,
             mode: window.ProblemGenerator.mode
         };
-        localStorage.setItem('shousuuwarizan_resume_save', JSON.stringify(saveObj));
+        localStorage.setItem('wariai_resume_save', JSON.stringify(saveObj));
     }
 }
 
 function checkResumeData() {
-    const saveDataStr = localStorage.getItem('shousuuwarizan_resume_save');
+    const saveDataStr = localStorage.getItem('wariai_resume_save');
     if (saveDataStr) {
         try {
             const saveData = JSON.parse(saveDataStr);
             if (saveData && saveData.score !== undefined && saveData.lives > 0) {
-                let modeJp = "わりきれる";
-                if (saveData.mode === 'remain') modeJp = "あまりあり";
-                else if (saveData.mode === 'approx') modeJp = "がいすう";
+                let modeJp = "割合を求める";
+                if (saveData.mode === 'compare') modeJp = "比べる量を求める";
+                else if (saveData.mode === 'base') modeJp = "もとにする量を求める";
                 
                 if (dom.btnResume) {
                     dom.btnResume.textContent = `つづきから (${modeJp}・${saveData.score}点)`;
@@ -573,25 +583,24 @@ function checkResumeData() {
 }
 
 function resumeGame() {
-    const saveDataStr = localStorage.getItem('shousuuwarizan_resume_save');
+    const saveDataStr = localStorage.getItem('wariai_resume_save');
     if (!saveDataStr) return;
     
     try {
         const saveData = JSON.parse(saveDataStr);
         window.ProblemGenerator.mode = saveData.mode;
-        if (saveData.mode === 'remain') {
-            window.ProblemGenerator.topicName = "小数の割り算（あまりあり）";
-        } else if (saveData.mode === 'approx') {
-            window.ProblemGenerator.topicName = "小数の割り算（概数）";
+        if (saveData.mode === 'compare') {
+            window.ProblemGenerator.topicName = "比べる量を求める";
+        } else if (saveData.mode === 'base') {
+            window.ProblemGenerator.topicName = "もとにする量を求める";
         } else {
-            window.ProblemGenerator.topicName = "小数の割り算";
+            window.ProblemGenerator.topicName = "割合を求める";
         }
         dom.topicNameDisplay.textContent = window.ProblemGenerator.topicName;
         document.title = window.ProblemGenerator.topicName;
         
         dom.playerNameInput.value = saveData.playerName || 'ななし';
         
-        // モード選択ボタンの active クラスを更新
         const modeBtns = {
             normal: document.getElementById('btn-mode-normal'),
             remain: document.getElementById('btn-mode-remain'),
@@ -600,8 +609,8 @@ function resumeGame() {
         Object.values(modeBtns).forEach(btn => {
             if (btn) btn.classList.remove('active');
         });
-        if (saveData.mode === 'remain' && modeBtns.remain) modeBtns.remain.classList.add('active');
-        else if (saveData.mode === 'approx' && modeBtns.approx) modeBtns.approx.classList.add('active');
+        if (saveData.mode === 'compare' && modeBtns.remain) modeBtns.remain.classList.add('active');
+        else if (saveData.mode === 'base' && modeBtns.approx) modeBtns.approx.classList.add('active');
         else if (modeBtns.normal) modeBtns.normal.classList.add('active');
 
         gameState = {
@@ -611,9 +620,6 @@ function resumeGame() {
             consecutiveCorrects: saveData.consecutiveCorrects || 0,
             currentProblem: null,
             userInput: "",
-            userInputQ: "",
-            userInputR: "",
-            activeField: "q",
             isTransitioning: false
         };
         

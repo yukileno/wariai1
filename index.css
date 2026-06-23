@@ -361,12 +361,27 @@ button:active {
         inset 0 0 20px rgba(0,0,0,0.1);
 }
 
-#calc-canvas {
+#diagram-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    z-index: 1;
+    pointer-events: none; /* 手書き入力を邪魔しない */
+}
+
+#calc-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
     cursor: crosshair;
     touch-action: none;
     display: block;
+    background: transparent; /* 背景を透明にして関係図を見せる */
 }
 
 .btn-clear-canvas {
@@ -610,6 +625,109 @@ h2 {
     .numpad button { padding: 0; height: 100%; display: flex; justify-content: center; align-items: center; font-size: clamp(1.3rem, 3.5vh, 2rem); }
     .question { font-size: clamp(1.6rem, 3.5vw, 2.2rem); }
     .equals-sign { font-size: clamp(1.6rem, 3.5vw, 2.2rem); }
-    #calc-area { margin-bottom: 1vh; }
     .answer-box { font-size: clamp(1.6rem, 3.5vw, 2.2rem); height: clamp(40px, 6vh, 60px); min-width: 120px; flex-shrink: 0; }
+}
+
+/* --- 割合・比率関係図（SVG）のスタイリング --- */
+.ratio-diagram-svg {
+    width: 100%;
+    height: 100%;
+    font-family: 'DotGothic16', monospace;
+}
+
+/* カクカクしたマイクラ風ボックス */
+.diagram-box {
+    fill: #dbb076; /* 木の看板に近い明るいベージュ */
+    stroke: #3d2c18; /* 木の枠線 */
+    stroke-width: 6px;
+    filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
+    transform-origin: center;
+    animation: fadeInBox 0.3s steps(4) forwards;
+}
+
+/* カクカクした太矢印 */
+.diagram-arrow-line {
+    fill: none;
+    stroke: #3d2c18;
+    stroke-width: 8px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: growArrow 0.5s steps(6) forwards;
+}
+
+.diagram-arrow-head {
+    fill: #3d2c18;
+    animation: fadeInBox 0.2s steps(3) 0.3s forwards;
+    opacity: 0;
+}
+
+/* テキストスタイル（マインクラフト看板の文字風） */
+.diagram-text-label {
+    font-size: 26px;
+    font-weight: bold;
+    fill: #3d2c18; /* 看板の文字は焦げ茶 */
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+
+.diagram-text-value {
+    font-size: 28px;
+    font-weight: bold;
+    fill: #3d2c18;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+
+/* 入力欄（□）のスタイリング */
+.diagram-input-box {
+    fill: rgba(0, 0, 0, 0.65);
+    stroke: #555555;
+    stroke-width: 4px;
+}
+
+/* 回答対象の「□」を強調する */
+.diagram-input-box.target-field {
+    stroke: #ffaa00; /* マイクラのゴールドイエロー */
+    stroke-width: 6px;
+    animation: glowTarget 1.2s infinite alternate ease-in-out;
+}
+
+.diagram-input-text {
+    font-size: 32px;
+    font-weight: bold;
+    fill: #ffff55; /* 入力中の文字は黄色 */
+    text-anchor: middle;
+    dominant-baseline: middle;
+    filter: drop-shadow(2px 2px 0px #1c1c00);
+}
+
+/* アニメーション定義 */
+@keyframes growArrow {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes fadeInBox {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes glowTarget {
+    from {
+        stroke: #ffaa00;
+        filter: drop-shadow(0px 0px 1px #ffaa00);
+    }
+    to {
+        stroke: #ffff55;
+        filter: drop-shadow(0px 0px 6px #ffff55);
+    }
 }
