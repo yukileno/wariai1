@@ -423,12 +423,12 @@ function renderDiagram() {
         </g>
 
         <!-- 右向きの矢印 (二重描きによる同化防止) -->
-        <g>
+        <g class="diagram-arrow-group">
             <!-- 矢印の黒縁 (太さ14px) -->
             <path class="diagram-arrow-line-shadow" d="M 160,90 H 270" />
             <polygon class="diagram-arrow-head-shadow" points="259,75 279,90 259,105" />
             
-            <!-- 矢印のネオンイエロー本体 (太さ6px) -->
+            <!-- 矢印のホワイト本体 (太さ6px) -->
             <path class="diagram-arrow-line" d="M 160,90 H 270" />
             <polygon class="diagram-arrow-head" points="262,80 276,90 262,100" />
         </g>

@@ -911,6 +911,11 @@ button:active {
 }
 
 /* 矢印 (二重縁取りによる視認性強化) */
+.diagram-arrow-group {
+    transform-origin: 215px 90px;
+    animation: fadeInArrow 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .diagram-arrow-line-shadow {
     fill: none;
     stroke: #000000;
@@ -925,10 +930,7 @@ button:active {
     stroke-width: 6px;
     stroke-linecap: square;
     stroke-linejoin: miter;
-    stroke-dasharray: 400;
-    stroke-dashoffset: 400;
     filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8)); /* 白いグロー */
-    animation: growArrow 0.4s ease-out forwards;
 }
 
 .diagram-arrow-head-shadow {
@@ -938,8 +940,6 @@ button:active {
 .diagram-arrow-head {
     fill: #ffffff; /* 白に変更 */
     filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8)); /* 白いグロー */
-    animation: fadeInBox 0.2s ease-out 0.25s forwards;
-    opacity: 0;
 }
 
 /* テキストスタイル */
@@ -994,6 +994,17 @@ button:active {
     to {
         stroke: #ffffff;
         filter: drop-shadow(0px 0px 10px var(--neon-pink));
+    }
+}
+
+@keyframes fadeInArrow {
+    from {
+        opacity: 0;
+        transform: scaleX(0.2);
+    }
+    to {
+        opacity: 1;
+        transform: scaleX(1);
     }
 }
 
