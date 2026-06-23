@@ -32,10 +32,16 @@
                     <span class="vs-logo-text">VS</span>
                 </div>
                 
-                <!-- CPU Rival -->
+                <!-- CPU Rival (Zangief) -->
                 <div class="vs-card rival-card">
-                    <div class="card-side-label cpu-color">CPU</div>
-                    <div class="rival-name">MATH MASTER</div>
+                    <div class="card-side-label cpu-color">2P</div>
+                    <div class="rival-name-wrap">
+                        <div class="rival-name">ZANGIEF</div>
+                        <div class="rival-title">THE RED CYCLONE</div>
+                    </div>
+                    <div class="zangief-vs-avatar-wrapper">
+                        <img src="css/zangief_portrait.png" class="zangief-vs-img" />
+                    </div>
                 </div>
             </div>
             
@@ -49,7 +55,7 @@
         <!-- Game Screen (Battle Stage) -->
         <div id="screen-game" class="screen">
             <div class="game-header">
-                <!-- Life Bar (P1) -->
+                <!-- 1P Player Life Bar -->
                 <div class="hud-item-sf6 player-hud">
                     <div class="hud-meta">
                         <span class="p1-label">1P</span>
@@ -61,10 +67,25 @@
                     </div>
                 </div>
                 
-                <!-- Score (Gold/Coins) -->
-                <div class="hud-item-sf6 score-hud">
-                    <span class="score-label">SCORE</span>
-                    <span id="current-score" class="hud-value">0</span>
+                <!-- VS Center HUD (Round / STAGE / Score) -->
+                <div class="hud-center-sf6">
+                    <div class="stage-label">STAGE <span id="game-stage">1</span></div>
+                    <div class="score-display-mini">🪙<span id="current-score">0</span></div>
+                </div>
+                
+                <!-- 2P Zangief Life Bar -->
+                <div class="hud-item-sf6 rival-hud">
+                    <div class="hud-meta rival-meta">
+                        <div class="rival-avatar-mini-wrapper">
+                            <img src="css/zangief_portrait.png" class="rival-avatar-mini" />
+                        </div>
+                        <span id="rival-name-display" class="hud-player-name">ZANGIEF</span>
+                        <span class="p2-label">2P</span>
+                    </div>
+                    <div class="life-bar-wrapper rival-bar-wrapper">
+                        <div id="rival-life-bar" class="life-bar-fill rival-bar-fill" style="width: 100%;"></div>
+                        <div class="life-bar-bg"></div>
+                    </div>
                 </div>
             </div>
             
@@ -77,7 +98,7 @@
             <div class="problem-board">
                 <!-- Question and Answer Box -->
                 <div class="question-container">
-                    <div id="question-text" class="question">□に入る数を答えてKOしろ！</div>
+                    <div id="question-text" class="question">□に入る数を答えてザンギエフをKOしろ！</div>
                     
                     <div class="answer-box-sf6" id="answer-box-normal">
                         <span id="user-input" class="user-input-text"></span>

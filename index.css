@@ -89,7 +89,7 @@ body {
 /* --- LOGO & TYPOGRAPHY --- */
 .logo-area {
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .logo-sf6 {
@@ -123,7 +123,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
+    position: relative;
 }
 
 .vs-card {
@@ -137,6 +138,7 @@ body {
     transform: skewX(-12deg);
     box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.5);
     transition: transform 0.2s ease;
+    height: 90px;
 }
 
 .vs-card::after {
@@ -165,6 +167,7 @@ body {
     border-color: var(--neon-pink);
     box-shadow: 0 0 10px rgba(255, 0, 119, 0.2), 6px 6px 0px rgba(0,0,0,0.5);
     margin-top: 5px;
+    justify-content: space-between;
 }
 
 .card-side-label {
@@ -174,6 +177,7 @@ body {
     margin-right: 15px;
     transform: skewX(12deg);
     padding: 0 10px;
+    z-index: 2;
 }
 .p1-color {
     background: var(--neon-cyan);
@@ -190,7 +194,7 @@ body {
 }
 
 #player-name {
-    width: 100%;
+    width: 90%;
     background: transparent;
     border: none;
     border-bottom: 2px solid rgba(255,255,255,0.3);
@@ -207,12 +211,44 @@ body {
     border-bottom-color: var(--neon-cyan);
 }
 
+.rival-name-wrap {
+    display: flex;
+    flex-direction: column;
+    transform: skewX(12deg);
+    z-index: 2;
+}
+
 .rival-name {
     font-family: var(--font-street);
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     color: #fff;
-    transform: skewX(12deg);
     letter-spacing: 1px;
+    line-height: 1.1;
+}
+
+.rival-title {
+    font-family: var(--font-hud);
+    font-size: 1rem;
+    color: var(--neon-yellow);
+    letter-spacing: 2px;
+}
+
+/* VS Zangief Visual in start screen */
+.zangief-vs-avatar-wrapper {
+    position: absolute;
+    right: -10px;
+    top: -20px;
+    height: 130px;
+    width: 130px;
+    transform: skewX(12deg);
+    pointer-events: none;
+}
+
+.zangief-vs-img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    filter: drop-shadow(0px 0px 8px var(--neon-pink));
 }
 
 /* VS Text Logo */
@@ -221,13 +257,13 @@ body {
     justify-content: center;
     align-items: center;
     position: relative;
-    height: 40px;
+    height: 30px;
     z-index: 5;
 }
 
 .vs-logo-text {
     font-family: var(--font-street);
-    font-size: 3.2rem;
+    font-size: 3rem;
     color: #fff;
     position: absolute;
     text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-cyan);
@@ -246,15 +282,15 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 button {
     width: 90%;
-    padding: 14px 20px;
+    padding: 12px 20px;
     border: none;
     font-family: var(--font-hud);
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 2px;
     text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
@@ -309,14 +345,14 @@ button:active {
     text-shadow: none;
 }
 
-/* --- GAME HEADER & HUD --- */
+/* --- GAME HEADER & HUD (DOUBLE HEALTH BARS) --- */
 .game-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
-    gap: 15px;
+    margin-bottom: 12px;
+    gap: 10px;
 }
 
 .hud-item-sf6 {
@@ -325,39 +361,77 @@ button:active {
 }
 
 .player-hud {
-    flex-grow: 1;
+    width: 100%;
+}
+
+.rival-hud {
+    width: 100%;
 }
 
 .hud-meta {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 4px;
 }
 
-.p1-label {
+.rival-meta {
+    justify-content: flex-end;
+}
+
+.p1-label, .p2-label {
     font-family: var(--font-hud);
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     font-weight: 700;
+    padding: 0 6px;
+    transform: skewX(-10deg);
+}
+.p1-label {
     background: var(--neon-cyan);
     color: #000;
-    padding: 0 8px;
-    transform: skewX(-10deg);
+}
+.p2-label {
+    background: var(--neon-pink);
+    color: #fff;
 }
 
 .hud-player-name {
     font-family: var(--font-sans);
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #ffffff;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80px;
+}
+
+/* ミニザンギエフアバター */
+.rival-avatar-mini-wrapper {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--neon-pink);
+    box-shadow: 0 0 5px var(--neon-pink);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+
+.rival-avatar-mini {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* 格ゲー風ライフバー */
 .life-bar-wrapper {
     position: relative;
-    height: 16px;
+    height: 12px;
     background: #111116;
     border: 2px solid #333340;
     transform: skewX(-15deg);
@@ -374,6 +448,18 @@ button:active {
     z-index: 2;
 }
 
+/* 2P Zangief ライフバー (右から左に減少させる) */
+.rival-bar-wrapper {
+    transform: skewX(15deg);
+}
+
+.rival-bar-fill {
+    float: right;
+    margin-left: auto;
+    background: linear-gradient(-90deg, #ff0044, var(--neon-pink)) !important;
+    box-shadow: 0 0 8px var(--neon-pink) !important;
+}
+
 .life-bar-bg {
     position: absolute;
     top: 0;
@@ -384,26 +470,34 @@ button:active {
     z-index: 1;
 }
 
-/* スコア表示 */
-.score-hud {
-    align-items: flex-end;
-    min-width: 100px;
+/* 中央HUDエリア (ROUND / STAGE / SCORE) */
+.hud-center-sf6 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 2px 10px;
+    transform: skewX(-10deg);
+    min-width: 60px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.5);
 }
 
-.score-label {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 900;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 1px;
-}
-
-.score-hud .hud-value {
+.stage-label {
     font-family: var(--font-hud);
-    font-size: 2.2rem;
-    line-height: 0.9;
+    font-size: 1rem;
     color: var(--neon-cyan);
-    text-shadow: var(--neon-cyan-glow);
+    letter-spacing: 1px;
+    line-height: 1;
+}
+
+.score-display-mini {
+    font-family: var(--font-hud);
+    font-size: 1.1rem;
+    color: #fff;
+    line-height: 1;
+    margin-top: 2px;
 }
 
 /* --- COMBO COUNTER OVERLAY --- */
@@ -416,6 +510,10 @@ button:active {
     align-items: flex-end;
     transform: skewX(-10deg) rotate(-5deg);
     z-index: 10;
+    opacity: 0;
+}
+
+.combo-counter.active {
     animation: comboPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
@@ -455,10 +553,10 @@ button:active {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.55);
     border: 2px solid rgba(255, 255, 255, 0.1);
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
     position: relative;
     overflow: hidden;
 }
@@ -475,12 +573,12 @@ button:active {
 }
 
 .question {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #ffffff;
     text-align: center;
-    margin-bottom: 8px;
-    line-height: 1.4;
+    margin-bottom: 6px;
+    line-height: 1.3;
 }
 
 /* 格ゲー風回答窓 */
@@ -488,12 +586,12 @@ button:active {
     background: rgba(10, 10, 15, 0.85);
     border: 2px solid var(--neon-cyan);
     min-width: 140px;
-    height: 48px;
+    height: 44px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: var(--font-hud);
-    font-size: 2.2rem;
+    font-size: 2rem;
     color: var(--neon-cyan);
     text-shadow: var(--neon-cyan-glow);
     position: relative;
@@ -523,14 +621,14 @@ button:active {
 
 @keyframes sf6Punch {
     0% { transform: skewX(-10deg) scale(1); }
-    50% { transform: skewX(-10deg) scale(1.15); }
+    50% { transform: skewX(-10deg) scale(1.12); }
     100% { transform: skewX(-10deg) scale(1); }
 }
 
 .cursor {
     display: inline-block;
-    width: 4px;
-    height: 24px;
+    width: 3px;
+    height: 20px;
     background: var(--neon-cyan);
     margin-left: 6px;
     animation: blink 0.8s infinite;
@@ -543,15 +641,15 @@ button:active {
     position: relative;
     width: 100%;
     flex-grow: 1;
-    min-height: 220px;
-    margin-bottom: 12px;
+    min-height: 200px;
+    margin-bottom: 10px;
     border: 3px solid #2a2a35;
-    background-color: #16161c;
+    background-color: #14141a;
     background-image: 
         radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0),
-        linear-gradient(rgba(0,0,0,0.4) 1px, transparent 0);
+        linear-gradient(rgba(0,0,0,0.5) 1px, transparent 0);
     background-size: 8px 8px, 100% 20px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.6);
     overflow: hidden;
 }
 
@@ -596,10 +694,10 @@ button:active {
     right: 8px;
     width: auto;
     margin: 0;
-    padding: 6px 12px;
-    font-size: 0.9rem;
+    padding: 5px 10px;
+    font-size: 0.8rem;
     z-index: 10;
-    background: rgba(30,30,40,0.85);
+    background: rgba(25,25,35,0.9);
     border: 1px solid #555;
     color: #ccc;
     transform: skewX(-8deg);
@@ -615,18 +713,18 @@ button:active {
 .numpad-sf6 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .btn-arcade {
     width: 100%;
     margin: 0;
-    padding: 10px 0;
-    border-radius: 4px; /* Slight rounded edges */
+    padding: 8px 0;
+    border-radius: 4px;
     font-family: var(--font-hud);
-    font-size: 2.2rem;
+    font-size: 2rem;
     line-height: 1;
     transform: skewX(-8deg);
     border: 2px solid rgba(0, 0, 0, 0.3);
@@ -676,16 +774,16 @@ button:active {
 .color-dark {
     background: #22222a;
     border-color: #333340;
-    font-size: 1.2rem;
-    padding: 16px 0;
+    font-size: 1.1rem;
+    padding: 14px 0;
     box-shadow: 3px 3px 0px rgba(0,0,0,0.5), inset 0 -4px 0px rgba(0,0,0,0.4);
 }
 
 .color-gold {
     background: #d4a017;
     border-color: #ffcc00;
-    font-size: 1.4rem;
-    padding: 14px 0;
+    font-size: 1.3rem;
+    padding: 12px 0;
     color: #000;
     text-shadow: none;
     font-weight: 900;
@@ -804,30 +902,42 @@ button:active {
 
 /* サイバーなネオンプレート */
 .diagram-box {
-    fill: #1a1a24;
+    fill: #14141e;
     stroke: var(--neon-cyan);
     stroke-width: 4px;
-    filter: drop-shadow(0px 0px 5px rgba(0, 243, 255, 0.3));
+    filter: drop-shadow(0px 0px 6px rgba(0, 243, 255, 0.3));
     transform-origin: center;
     animation: fadeInBox 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 矢印（グラフィティスプレーストローク） */
+/* 矢印 (二重縁取りによる視認性強化) */
+.diagram-arrow-line-shadow {
+    fill: none;
+    stroke: #000000;
+    stroke-width: 14px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+}
+
 .diagram-arrow-line {
     fill: none;
-    stroke: var(--neon-pink);
-    stroke-width: 8px;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke: var(--neon-yellow); /* 同化防止のためイエローに変更 */
+    stroke-width: 6px;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
     stroke-dasharray: 400;
     stroke-dashoffset: 400;
-    filter: drop-shadow(0px 0px 8px rgba(255, 0, 119, 0.5));
+    filter: drop-shadow(0px 0px 8px rgba(255, 230, 0, 0.7));
     animation: growArrow 0.4s ease-out forwards;
 }
 
+.diagram-arrow-head-shadow {
+    fill: #000000;
+}
+
 .diagram-arrow-head {
-    fill: var(--neon-pink);
-    filter: drop-shadow(0px 0px 8px rgba(255, 0, 119, 0.5));
+    fill: var(--neon-yellow); /* 同化防止のためイエローに変更 */
+    filter: drop-shadow(0px 0px 8px rgba(255, 230, 0, 0.7));
     animation: fadeInBox 0.2s ease-out 0.25s forwards;
     opacity: 0;
 }
@@ -846,21 +956,21 @@ button:active {
     font-size: 26px;
     font-weight: 700;
     font-family: var(--font-hud);
-    fill: var(--neon-yellow);
+    fill: var(--neon-cyan); /* 値はシアンにして黒枠の上に映えるように */
     text-anchor: middle;
     dominant-baseline: middle;
-    filter: drop-shadow(1px 1px 3px #000);
+    filter: drop-shadow(1px 1px 3px #000) drop-shadow(-1px -1px 3px #000);
 }
 
 /* 入力欄（□）のスタイリング */
 .diagram-input-box {
-    fill: rgba(0, 0, 0, 0.8);
+    fill: rgba(0, 0, 0, 0.85);
     stroke: #444455;
     stroke-width: 3px;
 }
 
 .diagram-input-box.target-field {
-    stroke: var(--neon-yellow);
+    stroke: var(--neon-pink); /* ターゲットはネオンピンクに */
     stroke-width: 4px;
     animation: glowTargetSF6 1s infinite alternate ease-in-out;
 }
@@ -869,21 +979,21 @@ button:active {
     font-size: 28px;
     font-weight: 900;
     font-family: var(--font-hud);
-    fill: var(--neon-yellow);
+    fill: var(--neon-pink);
     text-anchor: middle;
     dominant-baseline: middle;
-    filter: drop-shadow(0px 0px 5px var(--neon-yellow));
+    filter: drop-shadow(0px 0px 5px var(--neon-pink));
 }
 
 /* アニメーション定義 */
 @keyframes glowTargetSF6 {
     from {
-        stroke: var(--neon-yellow);
-        filter: drop-shadow(0px 0px 2px var(--neon-yellow));
+        stroke: var(--neon-pink);
+        filter: drop-shadow(0px 0px 2px var(--neon-pink));
     }
     to {
         stroke: #ffffff;
-        filter: drop-shadow(0px 0px 10px var(--neon-yellow));
+        filter: drop-shadow(0px 0px 10px var(--neon-pink));
     }
 }
 

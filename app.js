@@ -6,6 +6,9 @@ let gameState = {
     playerName: "",
     score: 0,
     lives: 3,
+    rivalLives: 5,       // ザンギエフのライフ（5問正解で1KO）
+    rivalMaxLives: 5,
+    stage: 1,            // 格ゲーのステージ数 (ザンギエフ撃破でアップ)
     consecutiveCorrects: 0,
     currentProblem: null,
     userInput: "",
@@ -25,6 +28,8 @@ const dom = {
     playerNameDisplay: document.getElementById('player-name-display'),
     topicNameDisplay: document.getElementById('topic-name'),
     lifeBar: document.getElementById('player-life-bar'),
+    rivalLifeBar: document.getElementById('rival-life-bar'),
+    gameStageDisplay: document.getElementById('game-stage'),
     currentScoreDisplay: document.getElementById('current-score'),
     questionText: document.getElementById('question-text'),
     
@@ -90,7 +95,6 @@ function init() {
         if(screens.game.classList.contains('active')) {
             if(/[0-9\.]/.test(e.key)) {
                 typeChar(e.key);
-                // キーボードに対応するアケコンボタンのフラッシュ効果
                 findAndFlashArcadeButton(e.key);
             } else if(e.key === 'Backspace') {
                 backspace();
@@ -145,6 +149,9 @@ function startGame() {
         playerName: name,
         score: 0,
         lives: 3,
+        rivalLives: 5,
+        rivalMaxLives: 5,
+        stage: 1,
         consecutiveCorrects: 0,
         currentProblem: null,
         userInput: "",
@@ -153,7 +160,9 @@ function startGame() {
     
     if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = name;
     if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
+    if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
     updateLivesDisplay();
+    updateRivalLivesDisplay();
     
     if (dom.comboContainer) dom.comboContainer.style.display = 'none';
     
@@ -170,7 +179,6 @@ function updateLivesDisplay() {
         const lifePercent = (gameState.lives / 3) * 100;
         dom.lifeBar.style.width = lifePercent + '%';
         
-        // 残りライフ数に応じてネオンの色をグラデーション変更
         if (gameState.lives === 1) {
             dom.lifeBar.style.background = 'linear-gradient(90deg, #ff0000, #ff5d00)';
             dom.lifeBar.style.boxShadow = '0 0 10px #ff0044';
@@ -181,6 +189,13 @@ function updateLivesDisplay() {
     }
 }
 
+function updateRivalLivesDisplay() {
+    if (dom.rivalLifeBar) {
+        const rivalPercent = (gameState.rivalLives / gameState.rivalMaxLives) * 100;
+        dom.rivalLifeBar.style.width = rivalPercent + '%';
+    }
+}
+
 function nextProblem() {
     saveGameProgress();
     gameState.currentProblem = window.ProblemGenerator.generate();
@@ -188,9 +203,7 @@ function nextProblem() {
         dom.questionText.textContent = gameState.currentProblem.questionText;
     }
     
-    // Clear drawing canvas for the new problem
     clearCanvas();
-
     gameState.userInput = "";
     updateInputDisplay();
     renderDiagram();
@@ -263,14 +276,12 @@ function resizeCanvas() {
         canvas.width = rect.width;
         canvas.height = rect.height;
         if(ctx) {
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 5; // 太くしてスプレー感強化
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            
-            // SF6 ネオンスプレーペン設定
             ctx.strokeStyle = '#ffe600'; 
             ctx.shadowColor = '#ffe600';
-            ctx.shadowBlur = 6;
+            ctx.shadowBlur = 8;
         }
     }
 }
@@ -311,11 +322,11 @@ function updateInputDisplay() {
     }
 }
 
-// --- SVG Diagram Rendering ---
+// --- SVG Diagram Rendering (視認性向上版) ---
 function renderDiagram() {
     if (!gameState.currentProblem || !gameState.currentProblem.params || !dom.diagramContainer) return;
     const params = gameState.currentProblem.params;
-    const target = params.target; // "ratio" | "compare" | "base"
+    const target = params.target;
 
     let labelA = params.colorA; // 左の箱 (白など)
     let labelB = params.colorB; // 右の箱 (赤など)
@@ -378,12 +389,15 @@ function renderDiagram() {
             `}
         </g>
 
-        <!-- 右向きの矢印 -->
+        <!-- 右向きの矢印 (二重描きによる同化防止) -->
         <g>
-            <!-- 矢印の線 -->
+            <!-- 矢印の黒縁 (太さ14px) -->
+            <path class="diagram-arrow-line-shadow" d="M 160,90 H 270" />
+            <polygon class="diagram-arrow-head-shadow" points="259,75 279,90 259,105" />
+            
+            <!-- 矢印のネオンイエロー本体 (太さ6px) -->
             <path class="diagram-arrow-line" d="M 160,90 H 270" />
-            <!-- 矢印の頭 -->
-            <polygon class="diagram-arrow-head" points="260,78 276,90 260,102" />
+            <polygon class="diagram-arrow-head" points="262,80 276,90 262,100" />
         </g>
 
         <!-- 割合（矢印の上） -->
@@ -423,11 +437,14 @@ function submitAnswer() {
         gameState.score += scoreGain;
         if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
         
-        // 連続正解（コンボ）処理
+        // ザンギエフにダメージを与える
+        gameState.rivalLives -= 1;
+        updateRivalLivesDisplay();
+        
         gameState.consecutiveCorrects += 1;
         updateComboDisplay();
         
-        // 5問連続正解でライフ全回復
+        // プレイヤーのライフ回復判定
         if (gameState.consecutiveCorrects % 5 === 0) {
             if (gameState.lives < 3) {
                 gameState.lives = 3;
@@ -435,11 +452,27 @@ function submitAnswer() {
             }
         }
         
-        setTimeout(() => {
-            gameState.isTransitioning = false;
-            nextProblem();
-            activeBox.classList.remove('correct');
-        }, 250);
+        // ザンギエフ撃破判定
+        if (gameState.rivalLives <= 0) {
+            gameState.stage += 1;
+            gameState.rivalMaxLives = Math.min(8, 4 + gameState.stage); // ステージアップでザンギエフがタフになる
+            gameState.rivalLives = gameState.rivalMaxLives;
+            
+            // 撃破演出としての若干のウェイト
+            setTimeout(() => {
+                if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
+                updateRivalLivesDisplay();
+                gameState.isTransitioning = false;
+                nextProblem();
+                activeBox.classList.remove('correct');
+            }, 500);
+        } else {
+            setTimeout(() => {
+                gameState.isTransitioning = false;
+                nextProblem();
+                activeBox.classList.remove('correct');
+            }, 250);
+        }
     } else {
         activeBox.classList.add('wrong');
         gameState.lives -= 1;
@@ -469,7 +502,6 @@ function updateComboDisplay() {
         dom.comboCount.textContent = gameState.consecutiveCorrects;
         dom.comboContainer.style.display = 'flex';
         
-        // コンボポップアニメーションのリセット・強制実行
         dom.comboContainer.classList.remove('active');
         void dom.comboContainer.offsetWidth; // リフロー
         dom.comboContainer.classList.add('active');
@@ -486,9 +518,9 @@ function endGame() {
     
     if (dom.finalScoreValue) dom.finalScoreValue.textContent = gameState.score;
     
-    // スコアに応じて勝利・敗北の表示切り替え（格ゲー風）
+    // スコア(または撃破ステージ)に応じて勝利・敗北判定
     if (dom.resultStatus) {
-        if (gameState.score >= 50) {
+        if (gameState.stage >= 2 || gameState.score >= 50) {
             dom.resultStatus.textContent = "VICTORY";
             dom.resultStatus.style.color = "var(--neon-yellow)";
             dom.resultStatus.style.textShadow = "0 0 15px rgba(255, 230, 0, 0.6), 3px 3px 0 #000";
@@ -581,9 +613,6 @@ async function showRanking() {
     }
 }
 
-// Start
-window.addEventListener('DOMContentLoaded', init);
-
 // --- Save/Resume Logic ---
 function saveGameProgress() {
     if (gameState && gameState.lives > 0) {
@@ -591,6 +620,9 @@ function saveGameProgress() {
             playerName: gameState.playerName,
             score: gameState.score,
             lives: gameState.lives,
+            rivalLives: gameState.rivalLives,
+            rivalMaxLives: gameState.rivalMaxLives,
+            stage: gameState.stage,
             consecutiveCorrects: gameState.consecutiveCorrects
         };
         localStorage.setItem('wariai_resume_save', JSON.stringify(saveObj));
@@ -604,7 +636,7 @@ function checkResumeData() {
             const saveData = JSON.parse(saveDataStr);
             if (saveData && saveData.score !== undefined && saveData.lives > 0) {
                 if (dom.btnResume) {
-                    dom.btnResume.textContent = `つづきから (${saveData.score}点)`;
+                    dom.btnResume.textContent = `つづきから (STAGE ${saveData.stage || 1})`;
                     dom.btnResume.style.display = 'block';
                 }
                 return;
@@ -634,6 +666,9 @@ function resumeGame() {
             playerName: saveData.playerName || 'CHALLENGER',
             score: saveData.score,
             lives: saveData.lives,
+            rivalLives: saveData.rivalLives || 5,
+            rivalMaxLives: saveData.rivalMaxLives || 5,
+            stage: saveData.stage || 1,
             consecutiveCorrects: saveData.consecutiveCorrects || 0,
             currentProblem: null,
             userInput: "",
@@ -642,7 +677,9 @@ function resumeGame() {
         
         if (dom.playerNameDisplay) dom.playerNameDisplay.textContent = gameState.playerName;
         if (dom.currentScoreDisplay) dom.currentScoreDisplay.textContent = gameState.score;
+        if (dom.gameStageDisplay) dom.gameStageDisplay.textContent = gameState.stage;
         updateLivesDisplay();
+        updateRivalLivesDisplay();
         updateComboDisplay();
         
         nextProblem();
@@ -657,3 +694,6 @@ function resumeGame() {
         startGame();
     }
 }
+
+// Start
+window.addEventListener('DOMContentLoaded', init);
